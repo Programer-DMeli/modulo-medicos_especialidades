@@ -44,8 +44,9 @@ public class Medico {
     @Column(name = "fecha_ingreso", nullable = false)
     private LocalDate fechaIngreso;
 
-    @Column(name = "estado", nullable = false)
-    private Boolean estado = true;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoMedico estado;
 
     public Medico() {
     }
@@ -63,7 +64,7 @@ public class Medico {
             String telefono,
             String correo,
             LocalDate fechaIngreso,
-            Boolean estado) {
+            EstadoMedico estado) {
 
         this.idMedico = idMedico;
         this.codigoMedico = codigoMedico;
@@ -176,11 +177,12 @@ public class Medico {
         this.fechaIngreso = fechaIngreso;
     }
 
-    public Boolean getEstado() {
+    public EstadoMedico getEstado() {
         return estado;
     }
 
-    public void setEstado(Boolean estado) {
+    public void setEstado(EstadoMedico estado) {
         this.estado = estado;
     }
+
 }
