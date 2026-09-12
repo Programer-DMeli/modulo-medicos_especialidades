@@ -1,8 +1,6 @@
 package com.tecsup.medicos_especialidades04.Model;
 
 import jakarta.persistence.*;
-import org.springframework.data.annotation.Id;
-
 import java.time.LocalDate;
 
 @Entity
