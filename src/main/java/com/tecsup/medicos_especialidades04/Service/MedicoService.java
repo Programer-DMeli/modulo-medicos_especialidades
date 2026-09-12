@@ -10,8 +10,12 @@ import java.util.List;
 
 @Service
 public class MedicoService {
+
     @Autowired
     private MedicoRepository repo;
+
+    @Autowired
+    private MedicoEspecialidadRepository medicoEspecialidadRepo;
 
     public List<Medico> listar() {
         return repo.findAll();
