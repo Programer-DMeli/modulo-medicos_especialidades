@@ -1,0 +1,76 @@
+/* ===== GENERAL ===== */
+body{
+    background-color:#f4f7fc;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.contenido{
+    padding:25px;
+}
+
+/* ===== NAVBAR ===== */
+
+.navbar-brand{
+    font-size:1.2rem;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar{
+    min-height:100vh;
+    border-right:1px solid #dee2e6;
+}
+
+.sidebar .list-group-item{
+    border:none;
+    padding:15px;
+    font-weight:500;
+}
+
+.sidebar .list-group-item:hover{
+    background:#0d6efd;
+    color:white;
+}
+
+/* ===== DASHBOARD ===== */
+
+.dashboard-card{
+    border-radius:18px;
+    transition:0.3s;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-8px);
+    box-shadow:0 12px 20px rgba(0,0,0,.15);
+}
+
+.icon-dashboard{
+    font-size:55px;
+}
+
+/* ===== TABLAS ===== */
+
+.table thead{
+    background:#0d6efd;
+    color:white;
+}
+
+/* ===== BOTONES ===== */
+
+.btn{
+    border-radius:10px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media(max-width:768px){
+
+    .sidebar{
+        min-height:auto;
+    }
+
+    .contenido{
+        padding:15px;
+    }
+
+}

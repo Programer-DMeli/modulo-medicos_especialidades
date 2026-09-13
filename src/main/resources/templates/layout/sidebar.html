@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<div th:fragment="sidebar" class="sidebar bg-white shadow-sm">
+
+    <div class="p-3">
+
+        <h5 class="text-primary fw-bold">
+            Menú Principal
+        </h5>
+
+        <hr>
+
+        <div class="list-group list-group-flush">
+
+            <a th:href="@{/}"
+               class="list-group-item list-group-item-action">
+
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+            </a>
+
+            <a th:href="@{/medicos}"
+               class="list-group-item list-group-item-action">
+
+                <i class="bi bi-person-badge"></i>
+                Médicos
+            </a>
+
+            <a th:href="@{/especialidades}"
+               class="list-group-item list-group-item-action">
+
+                <i class="bi bi-heart-pulse"></i>
+                Especialidades
+            </a>
+
+            <a th:href="@{/horarios}"
+               class="list-group-item list-group-item-action">
+
+                <i class="bi bi-calendar-event"></i>
+                Horarios
+            </a>
+
+            <a th:href="@{/consultorios}"
+               class="list-group-item list-group-item-action">
+
+                <i class="bi bi-hospital"></i>
+                Consultorios
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
