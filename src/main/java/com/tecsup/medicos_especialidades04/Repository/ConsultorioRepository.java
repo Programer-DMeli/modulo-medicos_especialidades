@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ConsultorioRepository extends JpaRepository<Consultorio, Long> {
+
+    boolean existsByCodigoIgnoreCase(String codigo);
 }

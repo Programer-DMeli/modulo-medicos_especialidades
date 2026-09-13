@@ -1,9 +1,11 @@
 package com.tecsup.medicos_especialidades04.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "consultorios")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Consultorio {
 
     @Id
@@ -27,14 +29,13 @@ public class Consultorio {
     private EstadoConsultorio estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "especialidad_id", nullable = false)
+    @JoinColumn(name = "especialidad_id")
     private Especialidades especialidad;
 
-   //Constructor sin parametros
 
     public Consultorio() {
     }
-    //Constructor con parametros
+
     public Consultorio(String codigo, String nombre, Integer piso,
                        String area, EstadoConsultorio estado,
                        Especialidades especialidad) {
@@ -45,10 +46,6 @@ public class Consultorio {
         this.estado = estado;
         this.especialidad = especialidad;
     }
-
-    // ==============================
-    // GETTERS Y SETTERS
-    // ==============================
 
     public Long getId() {
         return id;

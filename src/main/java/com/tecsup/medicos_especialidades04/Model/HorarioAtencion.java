@@ -17,7 +17,7 @@ public class HorarioAtencion {
     private Medico medico;
 
     @ManyToOne
-    @JoinColumn(name = "consultorio_id", nullable = false)
+    @JoinColumn(name = "consultorio_id")
     private Consultorio consultorio;
 
     @Column(name = "dia_semana", nullable = false, length = 20)
