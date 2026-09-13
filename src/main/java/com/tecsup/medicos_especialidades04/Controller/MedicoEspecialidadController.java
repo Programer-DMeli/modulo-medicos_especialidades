@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api//medico/especialidades")
+@RequestMapping("/api//medico-especialidades")
 public class MedicoEspecialidadController {
     @Autowired
     private MedicoEspecialidadService service;
