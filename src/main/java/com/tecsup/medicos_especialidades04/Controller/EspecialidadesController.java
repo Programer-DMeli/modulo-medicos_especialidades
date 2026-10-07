@@ -3,9 +3,12 @@ package com.tecsup.medicos_especialidades04.Controller;
 import com.tecsup.medicos_especialidades04.Model.Especialidades;
 import com.tecsup.medicos_especialidades04.Service.EspecialidadesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/especialidades")
@@ -45,5 +48,12 @@ public class EspecialidadesController {
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         service.eliminar(id);
+    }
+
+    // Manejar errores de duplicado (nombre o código ya existente)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
     }
 }
