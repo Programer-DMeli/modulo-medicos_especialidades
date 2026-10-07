@@ -3,9 +3,12 @@ package com.tecsup.medicos_especialidades04.Model;
 import jakarta.persistence.*;
 import java.time.LocalTime;
 
+// Pregunta 1 - Relaciones: TODO (Meliton): revisar/completar las relaciones del horario
 @Entity
 @Table(name = "horario_atencion")
 public class HorarioAtencion {
+    // TODO (Meliton): verificar @ManyToOne medico y consultorio ya existentes
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

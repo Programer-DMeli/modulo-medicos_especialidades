@@ -3,9 +3,12 @@ package com.tecsup.medicos_especialidades04.Model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+// Pregunta 1 - Relaciones: TODO (Angie): revisar/completar las relaciones del medico
 @Entity
 @Table(name = "medico")
 public class Medico {
+    // TODO (Angie): agregar @OneToMany con horarios y medico_especialidades
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_medico")

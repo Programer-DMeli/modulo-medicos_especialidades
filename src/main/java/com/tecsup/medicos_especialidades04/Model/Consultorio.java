@@ -3,10 +3,13 @@ package com.tecsup.medicos_especialidades04.Model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
+// Pregunta 1 - Relaciones: TODO (Luis): revisar/completar las relaciones del consultorio
 @Entity
 @Table(name = "consultorios")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Consultorio {
+    // TODO (Luis): verificar @ManyToOne especialidad y agregar @OneToMany con horarios
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
