@@ -67,4 +67,27 @@ public class HomeController {
     public String asignarConsultorio() {
         return "consultorios/asignar";
     }
+
+    // === MODULO USUARIOS/ROLES (Pregunta 4 - Luis) ===
+    @GetMapping("/usuarios")
+    public String listarUsuarios() {
+        return "usuarios/listar";
+    }
+
+    @GetMapping("/usuarios/registrar")
+    public String registrarUsuario() {
+        return "usuarios/registrar";
+    }
+
+    @GetMapping("/roles")
+    public String listarRoles() {
+        return "roles/listar";
+    }
+
+    @GetMapping("/roles/registrar")
+    public String registrarRol() {
+        return "roles/registrar";
+    }
+
+    // TODO (Luis): implementar /usuarios/editar/{id} y /roles/editar/{id}
 }

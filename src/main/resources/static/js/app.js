@@ -341,6 +341,88 @@ async function assignOffice() {
     });
 }
 
+// === PREGUNTA 4 - LUIS: implementar estas funciones de Usuarios/Roles ===
+// TODO (Luis): listar usuarios desde /api/usuarios y renderizar en #tabla-usuarios
+async function listUsers() {
+    const users = await api("/api/usuarios");
+    const body = document.querySelector("#tabla-usuarios");
+    body.innerHTML = users.length ? users.map(u => `
+        <tr>
+            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td>${escapeHtml(u.nombres)}</td>
+            <td>${escapeHtml(u.correo || "-")}</td>
+            <td>${escapeHtml(u.rol?.nombre || "-")}</td>
+            <td>${statusBadge(u.estado)}</td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-danger" data-delete-user="${u.idUsuario}">Eliminar</button></td>
+        </tr>`).join("") : emptyRow(6, "No hay usuarios registrados");
+    // OJO: agregar handler de eliminacion y boton activar/desactivar
+}
+
+// TODO (Luis): registrar usuario con POST /api/usuarios y cargar roles en #rolId
+function registerUser() {
+    loadRoleSelect().catch(e => showMessage(e.message));
+    const form = document.querySelector("#form-usuario");
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        submitForm(form, async data => {
+            const payload = {
+                username: data.username,
+                password: data.password,
+                nombres: data.nombres,
+                correo: data.correo,
+                estado: data.estado === "true",
+                rol: data.rolId ? { idRol: Number(data.rolId) } : null
+            };
+            await api("/api/usuarios", { method: "POST", headers: jsonHeaders, body: JSON.stringify(payload) });
+            setFlash("Usuario registrado correctamente");
+            location.href = "/usuarios";
+        });
+    });
+}
+
+// TODO (Luis): listar roles desde /api/roles y renderizar en #tabla-roles
+async function listRoles() {
+    const roles = await api("/api/roles");
+    const body = document.querySelector("#tabla-roles");
+    body.innerHTML = roles.length ? roles.map(r => `
+        <tr>
+            <td><strong>${escapeHtml(r.nombre)}</strong></td>
+            <td>${escapeHtml(r.descripcion || "-")}</td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}">Eliminar</button></td>
+        </tr>`).join("") : emptyRow(3, "No hay roles registrados");
+}
+
+// TODO (Luis): registrar rol con POST /api/roles
+function registerRole() {
+    const form = document.querySelector("#form-rol");
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        submitForm(form, async data => {
+            await api("/api/roles", { method: "POST", headers: jsonHeaders, body: JSON.stringify(data) });
+            setFlash("Rol registrado correctamente");
+            location.href = "/roles";
+        });
+    });
+}
+
+async function loadRoleSelect(selectedValue) {
+    const roles = await api("/api/roles");
+    fillSelect(document.querySelector("#rolId"), roles, r => r.idRol, r => r.nombre, "Selecciona un rol", selectedValue);
+}
+
+// init del formulario de usuario: cargar roles en el select
+function initUserForm() {
+    loadRoleSelect().catch(e => showMessage(e.message));
+}
+
+async function initUsersPage() {
+    await listUsers();
+}
+
+async function initRolesPage() {
+    await listRoles();
+}
+
 function activateNavigation() {
     const section = location.pathname.split("/")[1];
     document.querySelectorAll(".navbar .nav-link").forEach(link => {
@@ -359,7 +441,12 @@ const pageInitializers = {
     "horarios-editar": editSchedule,
     "consultorios-listar": listOffices,
     "consultorios-registrar": registerOffice,
-    "consultorios-asignar": assignOffice
+    "consultorios-asignar": assignOffice,
+    // Pregunta 4 - Luis: implementar estas funciones
+    "usuarios-listar": listUsers,
+    "usuarios-registrar": registerUser,
+    "roles-listar": listRoles,
+    "roles-registrar": registerRole
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
