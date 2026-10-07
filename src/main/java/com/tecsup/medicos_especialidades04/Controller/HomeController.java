@@ -89,5 +89,15 @@ public class HomeController {
         return "roles/registrar";
     }
 
-    // TODO (Luis): implementar /usuarios/editar/{id} y /roles/editar/{id}
+    @GetMapping("/usuarios/editar/{id}")
+    public String editarUsuario(@PathVariable Long id, Model model) {
+        model.addAttribute("usuarioId", id);
+        return "usuarios/editar";
+    }
+
+    @GetMapping("/roles/editar/{id}")
+    public String editarRol(@PathVariable Long id, Model model) {
+        model.addAttribute("rolId", id);
+        return "roles/editar";
+    }
 }

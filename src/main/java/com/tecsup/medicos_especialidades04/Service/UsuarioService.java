@@ -30,13 +30,18 @@ public class UsuarioService {
     }
 
     public Usuario actualizar(Long id, Usuario usuario) {
-        // TODO (Angie): completar actualizacion parcial
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         existente.setNombres(usuario.getNombres());
         existente.setCorreo(usuario.getCorreo());
         existente.setEstado(usuario.getEstado());
         existente.setRol(usuario.getRol());
+        if (usuario.getUsername() != null && !usuario.getUsername().isBlank()) {
+            existente.setUsername(usuario.getUsername());
+        }
+        if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
+            existente.setPassword(usuario.getPassword());
+        }
         return usuarioRepository.save(existente);
     }
 

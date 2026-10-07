@@ -2,13 +2,18 @@ package com.tecsup.medicos_especialidades04.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
-// Pregunta 1 - Relaciones: TODO (Luis): revisar/completar las relaciones del consultorio
+// Pregunta 1 - Relaciones:
 @Entity
 @Table(name = "consultorios")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Consultorio {
-    // TODO (Luis): verificar @ManyToOne especialidad y agregar @OneToMany con horarios
+    // Relacion inversa: un consultorio tiene muchos horarios de atencion
+    @OneToMany(mappedBy = "consultorio")
+    @com.fasterxml.jackson.annotation.JsonIgnore // evita recursion infinita en el JSON
+    private List<HorarioAtencion> horarios = new ArrayList<>();
 
 
     @Id
@@ -104,5 +109,13 @@ public class Consultorio {
 
     public void setEspecialidad(Especialidades especialidad) {
         this.especialidad = especialidad;
+    }
+
+    public List<HorarioAtencion> getHorarios() {
+        return horarios;
+    }
+
+    public void setHorarios(List<HorarioAtencion> horarios) {
+        this.horarios = horarios;
     }
 }

@@ -341,8 +341,8 @@ async function assignOffice() {
     });
 }
 
-// === PREGUNTA 4 - LUIS: implementar estas funciones de Usuarios/Roles ===
-// TODO (Luis): listar usuarios desde /api/usuarios y renderizar en #tabla-usuarios
+// === PREGUNTA 4 - LUIS: Usuarios/Roles ===
+
 async function listUsers() {
     const users = await api("/api/usuarios");
     const body = document.querySelector("#tabla-usuarios");
@@ -353,12 +353,26 @@ async function listUsers() {
             <td>${escapeHtml(u.correo || "-")}</td>
             <td>${escapeHtml(u.rol?.nombre || "-")}</td>
             <td>${statusBadge(u.estado)}</td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-danger" data-delete-user="${u.idUsuario}">Eliminar</button></td>
+            <td class="text-end"><div class="btn-group">
+                <a class="btn btn-sm btn-outline-primary" href="/usuarios/editar/${u.idUsuario}" title="Editar"><i class="bi bi-pencil"></i></a>
+                <button class="btn btn-sm btn-outline-warning" data-toggle-user="${u.idUsuario}" data-active="${u.estado}" title="Activar/Desactivar"><i class="bi bi-toggle-on"></i></button>
+                <button class="btn btn-sm btn-outline-danger" data-delete-user="${u.idUsuario}" title="Eliminar"><i class="bi bi-trash"></i></button>
+            </div></td>
         </tr>`).join("") : emptyRow(6, "No hay usuarios registrados");
-    // OJO: agregar handler de eliminacion y boton activar/desactivar
+
+    body.addEventListener("click", async event => {
+        const del = event.target.closest("[data-delete-user]");
+        const tog = event.target.closest("[data-toggle-user]");
+        if (del && confirm("¿Eliminar este usuario?")) {
+            try { await api(`/api/usuarios/${del.dataset.deleteUser}`, { method: "DELETE" }); setFlash("Usuario eliminado"); location.reload(); } catch (e) { showMessage(e.message); }
+        }
+        if (tog) {
+            const nuevo = tog.dataset.active === "true" ? "false" : "true";
+            try { await api(`/api/usuarios/${tog.dataset.toggleUser}/estado?activo=${nuevo}`, { method: "PUT" }); setFlash("Estado actualizado"); location.reload(); } catch (e) { showMessage(e.message); }
+        }
+    });
 }
 
-// TODO (Luis): registrar usuario con POST /api/usuarios y cargar roles en #rolId
 function registerUser() {
     loadRoleSelect().catch(e => showMessage(e.message));
     const form = document.querySelector("#form-usuario");
@@ -380,7 +394,35 @@ function registerUser() {
     });
 }
 
-// TODO (Luis): listar roles desde /api/roles y renderizar en #tabla-roles
+async function editUser() {
+    const id = document.body.dataset.id;
+    const user = await api(`/api/usuarios/${id}`);
+    await loadRoleSelect(user.rol?.idRol);
+    const form = document.querySelector("#form-usuario");
+    form.elements.username.value = user.username;
+    form.elements.password.value = "";
+    form.elements.nombres.value = user.nombres;
+    form.elements.correo.value = user.correo || "";
+    form.elements.rolId.value = user.rol?.idRol || "";
+    form.elements.estado.value = String(user.estado);
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        submitForm(form, async data => {
+            const payload = {
+                username: data.username,
+                password: data.password,
+                nombres: data.nombres,
+                correo: data.correo,
+                estado: data.estado === "true",
+                rol: data.rolId ? { idRol: Number(data.rolId) } : null
+            };
+            await api(`/api/usuarios/${id}`, { method: "PUT", headers: jsonHeaders, body: JSON.stringify(payload) });
+            setFlash("Usuario actualizado correctamente");
+            location.href = "/usuarios";
+        });
+    });
+}
+
 async function listRoles() {
     const roles = await api("/api/roles");
     const body = document.querySelector("#tabla-roles");
@@ -388,11 +430,20 @@ async function listRoles() {
         <tr>
             <td><strong>${escapeHtml(r.nombre)}</strong></td>
             <td>${escapeHtml(r.descripcion || "-")}</td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}">Eliminar</button></td>
+            <td class="text-end"><div class="btn-group">
+                <a class="btn btn-sm btn-outline-primary" href="/roles/editar/${r.idRol}" title="Editar"><i class="bi bi-pencil"></i></a>
+                <button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}" title="Eliminar"><i class="bi bi-trash"></i></button>
+            </div></td>
         </tr>`).join("") : emptyRow(3, "No hay roles registrados");
+
+    body.addEventListener("click", async event => {
+        const del = event.target.closest("[data-delete-role]");
+        if (del && confirm("¿Eliminar este rol?")) {
+            try { await api(`/api/roles/${del.dataset.deleteRole}`, { method: "DELETE" }); setFlash("Rol eliminado"); location.reload(); } catch (e) { showMessage(e.message); }
+        }
+    });
 }
 
-// TODO (Luis): registrar rol con POST /api/roles
 function registerRole() {
     const form = document.querySelector("#form-rol");
     form.addEventListener("submit", event => {
@@ -405,12 +456,27 @@ function registerRole() {
     });
 }
 
+async function editRole() {
+    const id = document.body.dataset.id;
+    const role = await api(`/api/roles/${id}`);
+    const form = document.querySelector("#form-rol");
+    form.elements.nombre.value = role.nombre;
+    form.elements.descripcion.value = role.descripcion || "";
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        submitForm(form, async data => {
+            await api(`/api/roles/${id}`, { method: "PUT", headers: jsonHeaders, body: JSON.stringify(data) });
+            setFlash("Rol actualizado correctamente");
+            location.href = "/roles";
+        });
+    });
+}
+
 async function loadRoleSelect(selectedValue) {
     const roles = await api("/api/roles");
     fillSelect(document.querySelector("#rolId"), roles, r => r.idRol, r => r.nombre, "Selecciona un rol", selectedValue);
 }
 
-// init del formulario de usuario: cargar roles en el select
 function initUserForm() {
     loadRoleSelect().catch(e => showMessage(e.message));
 }
@@ -442,11 +508,13 @@ const pageInitializers = {
     "consultorios-listar": listOffices,
     "consultorios-registrar": registerOffice,
     "consultorios-asignar": assignOffice,
-    // Pregunta 4 - Luis: implementar estas funciones
+    // Pregunta 4 - Luis: Usuarios/Roles
     "usuarios-listar": listUsers,
     "usuarios-registrar": registerUser,
+    "usuarios-editar": editUser,
     "roles-listar": listRoles,
-    "roles-registrar": registerRole
+    "roles-registrar": registerRole,
+    "roles-editar": editRole
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
