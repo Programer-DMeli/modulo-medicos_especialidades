@@ -27,6 +27,9 @@ public class ConsultorioService {
     @Autowired
     private HorarioAtencionRepository horarioAtencionRepository;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<Consultorio> listar() {
         return consultorioRepository.findAll();
     }
@@ -59,7 +62,9 @@ public class ConsultorioService {
 
         asociarEspecialidadExistente(consultorio);
 
-        return consultorioRepository.save(consultorio);
+        Consultorio saved = consultorioRepository.save(consultorio);
+        auditoriaService.registrarOperacion("CREATE", "Consultorio", saved.getId());
+        return saved;
     }
 
     @Transactional
@@ -92,7 +97,9 @@ public class ConsultorioService {
 
         horario.setConsultorio(consultorio);
 
-        return horarioAtencionRepository.save(horario);
+        HorarioAtencion saved = horarioAtencionRepository.save(horario);
+        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", saved.getIdHorario());
+        return saved;
     }
 
     private void asociarEspecialidadExistente(Consultorio consultorio) {
@@ -164,5 +171,6 @@ public class ConsultorioService {
                 ));
 
         consultorioRepository.delete(consultorio);
+        auditoriaService.registrarOperacion("DELETE", "Consultorio", id);
     }
 }
