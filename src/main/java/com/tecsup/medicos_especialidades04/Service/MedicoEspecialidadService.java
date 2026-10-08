@@ -13,12 +13,21 @@ public class MedicoEspecialidadService {
     @Autowired
     private MedicoEspecialidadRepository repo;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<MedicoEspecialidad> listar() {
         return repo.findAll();
     }
 
     public MedicoEspecialidad guardar(MedicoEspecialidad medicoEspecialidad) {
-        return repo.save(medicoEspecialidad);
+        MedicoEspecialidad saved = repo.save(medicoEspecialidad);
+        auditoriaService.registrarOperacion(
+            medicoEspecialidad.getIdMedicoEspecialidad() == null ? "CREATE" : "UPDATE",
+            "MedicoEspecialidad",
+            saved.getIdMedicoEspecialidad()
+        );
+        return saved;
     }
 
     public MedicoEspecialidad obtener(Long id) {
@@ -27,5 +36,6 @@ public class MedicoEspecialidadService {
 
     public void eliminar(Long id) {
         repo.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "MedicoEspecialidad", id);
     }
 }
