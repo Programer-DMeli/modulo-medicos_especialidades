@@ -12,6 +12,9 @@ public class HorarioAtencionService {
     @Autowired
     private HorarioAtencionRepository repo;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     // LISTAR TODOS LOS HORARIOS
     public List<HorarioAtencion> listar() {
         return repo.findAll();
@@ -19,7 +22,13 @@ public class HorarioAtencionService {
 
     // REGISTRAR HORARIO
     public HorarioAtencion guardar(HorarioAtencion horario) {
-        return repo.save(horario);
+        HorarioAtencion saved = repo.save(horario);
+        auditoriaService.registrarOperacion(
+            horario.getIdHorario() == null ? "CREATE" : "UPDATE",
+            "HorarioAtencion",
+            saved.getIdHorario()
+        );
+        return saved;
     }
 
     // BUSCAR HORARIO POR ID
@@ -43,10 +52,13 @@ public class HorarioAtencionService {
         existente.setDuracionCita(horario.getDuracionCita());
         existente.setEstado(horario.getEstado());
 
-        return repo.save(existente);
+        HorarioAtencion saved = repo.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", saved.getIdHorario());
+        return saved;
     }
     // eliminar
     public void eliminar(Long id) {
         repo.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "HorarioAtencion", id);
     }
 }
