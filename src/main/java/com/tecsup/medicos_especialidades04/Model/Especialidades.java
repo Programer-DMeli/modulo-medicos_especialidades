@@ -2,13 +2,21 @@ package com.tecsup.medicos_especialidades04.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 // Pregunta 1 - Relaciones: TODO (Mayra): revisar/completar las relaciones de la especialidad
 @Entity
 @Table(name = "especialidad")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Especialidades {
-    // TODO (Mayra): agregar @OneToMany con consultorios y medico_especialidades
+    @OneToMany(mappedBy = "especialidad", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("especialidad")
+    private List<Consultorio> consultorios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "especialidad", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("especialidad")
+    private List<MedicoEspecialidad> medicoEspecialidades = new ArrayList<>();
 
 
     @Id
@@ -93,5 +101,21 @@ public class Especialidades {
 
     public void setEstado(Boolean estado) {
         this.estado = estado;
+    }
+
+    public List<Consultorio> getConsultorios() {
+        return consultorios;
+    }
+
+    public void setConsultorios(List<Consultorio> consultorios) {
+        this.consultorios = consultorios;
+    }
+
+    public List<MedicoEspecialidad> getMedicoEspecialidades() {
+        return medicoEspecialidades;
+    }
+
+    public void setMedicoEspecialidades(List<MedicoEspecialidad> medicoEspecialidades) {
+        this.medicoEspecialidades = medicoEspecialidades;
     }
 }
