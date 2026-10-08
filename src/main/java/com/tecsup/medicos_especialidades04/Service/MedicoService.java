@@ -17,12 +17,21 @@ public class MedicoService {
     @Autowired
     private MedicoEspecialidadRepository medicoEspecialidadRepo;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<Medico> listar() {
         return repo.findAll();
     }
 
     public Medico guardar(Medico medico) {
-        return repo.save(medico);
+        Medico saved = repo.save(medico);
+        auditoriaService.registrarOperacion(
+            medico.getIdMedico() == null ? "CREATE" : "UPDATE",
+            "Medico",
+            saved.getIdMedico()
+        );
+        return saved;
     }
 
     public Medico obtener(Long id) {
@@ -31,5 +40,6 @@ public class MedicoService {
 
     public void eliminar(Long id) {
         repo.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "Medico", id);
     }
 }
