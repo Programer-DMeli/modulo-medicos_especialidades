@@ -16,6 +16,9 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<Usuario> listar() {
         return usuarioRepository.findAll();
     }
@@ -26,7 +29,9 @@ public class UsuarioService {
 
     public Usuario registrar(Usuario usuario) {
         // TODO (Angie): validar username unico, encriptar password con BCrypt
-        return usuarioRepository.save(usuario);
+        Usuario saved = usuarioRepository.save(usuario);
+        auditoriaService.registrarOperacion("CREATE", "Usuario", saved.getIdUsuario());
+        return saved;
     }
 
     public Usuario actualizar(Long id, Usuario usuario) {
@@ -42,7 +47,9 @@ public class UsuarioService {
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
             existente.setPassword(usuario.getPassword());
         }
-        return usuarioRepository.save(existente);
+        Usuario saved = usuarioRepository.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        return saved;
     }
 
     public Usuario cambiarEstado(Long id, Boolean estado) {
@@ -50,10 +57,13 @@ public class UsuarioService {
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         existente.setEstado(estado);
-        return usuarioRepository.save(existente);
+        Usuario saved = usuarioRepository.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        return saved;
     }
 
     public void eliminar(Long id) {
         usuarioRepository.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "Usuario", id);
     }
 }
