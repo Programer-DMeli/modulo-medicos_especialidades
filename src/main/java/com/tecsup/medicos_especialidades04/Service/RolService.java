@@ -16,6 +16,9 @@ public class RolService {
     @Autowired
     private RolRepository rolRepository;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<Rol> listar() {
         return rolRepository.findAll();
     }
@@ -26,7 +29,9 @@ public class RolService {
 
     public Rol registrar(Rol rol) {
         // TODO (Angie): validar nombre unico y obligatorio
-        return rolRepository.save(rol);
+        Rol saved = rolRepository.save(rol);
+        auditoriaService.registrarOperacion("CREATE", "Rol", saved.getIdRol());
+        return saved;
     }
 
     public Rol actualizar(Long id, Rol rol) {
@@ -35,11 +40,14 @@ public class RolService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rol no encontrado"));
         existente.setNombre(rol.getNombre());
         existente.setDescripcion(rol.getDescripcion());
-        return rolRepository.save(existente);
+        Rol saved = rolRepository.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "Rol", saved.getIdRol());
+        return saved;
     }
 
     public void eliminar(Long id) {
         // TODO (Angie): validar que no tenga usuarios asociados antes de eliminar
         rolRepository.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "Rol", id);
     }
 }
