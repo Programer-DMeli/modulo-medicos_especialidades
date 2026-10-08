@@ -13,6 +13,9 @@ public class EspecialidadesService {
     @Autowired
     private EspecialidadesRepository repo;
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
     public List<Especialidades> listar() {
         return repo.findAll();
     }
@@ -27,7 +30,13 @@ public class EspecialidadesService {
                 throw new IllegalArgumentException("Ya existe una especialidad con el código: " + especialidad.getCodigo());
             }
         }
-        return repo.save(especialidad);
+        Especialidades saved = repo.save(especialidad);
+        auditoriaService.registrarOperacion(
+            especialidad.getIdEspecialidad() == null ? "CREATE" : "UPDATE",
+            "Especialidad",
+            saved.getIdEspecialidad()
+        );
+        return saved;
     }
 
     public Especialidades obtener(Long id) {
@@ -39,7 +48,9 @@ public class EspecialidadesService {
 
         if (especialidad != null) {
             especialidad.setEstado(estado);
-            return repo.save(especialidad);
+            Especialidades saved = repo.save(especialidad);
+            auditoriaService.registrarOperacion("UPDATE", "Especialidad", saved.getIdEspecialidad());
+            return saved;
         }
 
         return null;
@@ -47,5 +58,6 @@ public class EspecialidadesService {
 
     public void eliminar(Long id) {
         repo.deleteById(id);
+        auditoriaService.registrarOperacion("DELETE", "Especialidad", id);
     }
 }
