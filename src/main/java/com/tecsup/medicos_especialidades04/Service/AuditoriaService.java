@@ -2,12 +2,12 @@ package com.tecsup.medicos_especialidades04.Service;
 
 import com.tecsup.medicos_especialidades04.Model.Auditoria;
 import com.tecsup.medicos_especialidades04.Repository.AuditoriaRepository;
+import com.tecsup.medicos_especialidades04.config.AuditUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-// TODO (Mayra): completar logica de registro automatico desde servicios/controllers
 @Service
 public class AuditoriaService {
 
@@ -18,9 +18,8 @@ public class AuditoriaService {
         return auditoriaRepository.findAll();
     }
 
-    // TODO (Mayra): llamar a registrar en ConsultorioService/EspecialidadesService/etc
-    // en cada create/update/delete para cumplir la Pregunta 2
-    public Auditoria registrarOperacion(String usuario, String operacion, String entidad, Long registroId) {
+    public Auditoria registrarOperacion(String operacion, String entidad, Long registroId) {
+        String usuario = AuditUtil.getCurrentUsername();
         Auditoria a = new Auditoria();
         a.setUsuario(usuario);
         a.setOperacion(operacion);
