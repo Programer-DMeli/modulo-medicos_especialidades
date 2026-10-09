@@ -79,8 +79,12 @@ public class UsuarioService {
         return saved;
     }
 
-    public void eliminar(Long id) {
-        usuarioRepository.deleteById(id);
-        auditoriaService.registrarOperacion("DELETE", "Usuario", id);
+    public Usuario desactivar(Long id) {
+        Usuario existente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        existente.setEstado(false);
+        Usuario saved = usuarioRepository.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        return saved;
     }
 }
