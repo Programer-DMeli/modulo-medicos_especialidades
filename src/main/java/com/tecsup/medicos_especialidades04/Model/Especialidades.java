@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// Pregunta 1 - Relaciones: TODO (Mayra): revisar/completar las relaciones de la especialidad
+// Pregunta 1 - Relaciones: (Mayra) relaciones @OneToMany con consultorios y medico_especialidad completadas
 @Entity
 @Table(name = "especialidad")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})

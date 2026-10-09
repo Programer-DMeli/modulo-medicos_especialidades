@@ -32,7 +32,7 @@ public class EspecialidadesService {
         }
         Especialidades saved = repo.save(especialidad);
         auditoriaService.registrarOperacion(
-            especialidad.getIdEspecialidad() == null ? "CREATE" : "UPDATE",
+            especialidad.getIdEspecialidad() == null ? "INSERT" : "UPDATE",
             "Especialidad",
             saved.getIdEspecialidad()
         );

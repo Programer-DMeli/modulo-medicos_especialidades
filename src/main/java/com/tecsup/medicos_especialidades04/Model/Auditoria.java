@@ -20,7 +20,7 @@ public class Auditoria {
     private LocalDateTime fechaHora = LocalDateTime.now();
 
     @Column(name = "operacion", length = 20)
-    private String operacion; // CREATE, UPDATE, DELETE
+    private String operacion; // INSERT, UPDATE, DELETE
 
     @Column(name = "entidad", length = 50)
     private String entidad;

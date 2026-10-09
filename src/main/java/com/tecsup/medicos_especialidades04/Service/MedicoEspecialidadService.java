@@ -23,7 +23,7 @@ public class MedicoEspecialidadService {
     public MedicoEspecialidad guardar(MedicoEspecialidad medicoEspecialidad) {
         MedicoEspecialidad saved = repo.save(medicoEspecialidad);
         auditoriaService.registrarOperacion(
-            medicoEspecialidad.getIdMedicoEspecialidad() == null ? "CREATE" : "UPDATE",
+            medicoEspecialidad.getIdMedicoEspecialidad() == null ? "INSERT" : "UPDATE",
             "MedicoEspecialidad",
             saved.getIdMedicoEspecialidad()
         );

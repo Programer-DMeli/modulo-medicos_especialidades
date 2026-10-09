@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// TODO (Mayra): crear mecanismos de registro automatico (AOP/interceptors o en services)
+// Registro automatico en AuditoriaService, invocado desde cada servicio (INSERT/UPDATE/DELETE)
 @RestController
 @RequestMapping("/api/auditoria")
 @CrossOrigin(origins = "*")

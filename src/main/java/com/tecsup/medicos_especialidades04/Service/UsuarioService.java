@@ -43,7 +43,7 @@ public class UsuarioService {
         usuario.setUsername(usuario.getUsername().trim());
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         Usuario saved = usuarioRepository.save(usuario);
-        auditoriaService.registrarOperacion("CREATE", "Usuario", saved.getIdUsuario());
+        auditoriaService.registrarOperacion("INSERT", "Usuario", saved.getIdUsuario());
         return saved;
     }
 

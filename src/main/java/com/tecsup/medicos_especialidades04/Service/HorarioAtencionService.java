@@ -24,7 +24,7 @@ public class HorarioAtencionService {
     public HorarioAtencion guardar(HorarioAtencion horario) {
         HorarioAtencion saved = repo.save(horario);
         auditoriaService.registrarOperacion(
-            horario.getIdHorario() == null ? "CREATE" : "UPDATE",
+            horario.getIdHorario() == null ? "INSERT" : "UPDATE",
             "HorarioAtencion",
             saved.getIdHorario()
         );

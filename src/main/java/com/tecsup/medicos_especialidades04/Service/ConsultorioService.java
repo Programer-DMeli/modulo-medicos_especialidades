@@ -63,7 +63,7 @@ public class ConsultorioService {
         asociarEspecialidadExistente(consultorio);
 
         Consultorio saved = consultorioRepository.save(consultorio);
-        auditoriaService.registrarOperacion("CREATE", "Consultorio", saved.getId());
+        auditoriaService.registrarOperacion("INSERT", "Consultorio", saved.getId());
         return saved;
     }
 

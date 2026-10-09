@@ -39,7 +39,7 @@ public class RolService {
         }
         rol.setNombre(rol.getNombre().trim());
         Rol saved = rolRepository.save(rol);
-        auditoriaService.registrarOperacion("CREATE", "Rol", saved.getIdRol());
+        auditoriaService.registrarOperacion("INSERT", "Rol", saved.getIdRol());
         return saved;
     }
 

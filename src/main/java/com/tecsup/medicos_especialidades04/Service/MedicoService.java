@@ -27,7 +27,7 @@ public class MedicoService {
     public Medico guardar(Medico medico) {
         Medico saved = repo.save(medico);
         auditoriaService.registrarOperacion(
-            medico.getIdMedico() == null ? "CREATE" : "UPDATE",
+            medico.getIdMedico() == null ? "INSERT" : "UPDATE",
             "Medico",
             saved.getIdMedico()
         );
