@@ -23,38 +23,43 @@
             </a>
 
             <a th:href="@{/medicos}"
-               class="list-group-item list-group-item-action">
+               class="list-group-item list-group-item-action"
+               sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')">
 
                 <i class="bi bi-person-badge"></i>
                 Médicos
             </a>
 
             <a th:href="@{/especialidades}"
-               class="list-group-item list-group-item-action">
+               class="list-group-item list-group-item-action"
+               sec:authorize="isAuthenticated()">
 
                 <i class="bi bi-heart-pulse"></i>
                 Especialidades
             </a>
 
             <a th:href="@{/horarios}"
-               class="list-group-item list-group-item-action">
+               class="list-group-item list-group-item-action"
+               sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
 
                 <i class="bi bi-calendar-event"></i>
                 Horarios
             </a>
 
             <a th:href="@{/consultorios}"
-               class="list-group-item list-group-item-action">
+               class="list-group-item list-group-item-action"
+               sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
 
                 <i class="bi bi-hospital"></i>
                 Consultorios
             </a>
 
-            <!-- TODO (Luis): descomentar cuando el modulo este completo -->
-            <a th:href="@{/usuarios}" class="list-group-item list-group-item-action">
+            <a th:href="@{/usuarios}" class="list-group-item list-group-item-action"
+               sec:authorize="hasRole('ADMINISTRADOR')">
                 <i class="bi bi-people"></i> Usuarios
             </a>
-            <a th:href="@{/roles}" class="list-group-item list-group-item-action">
+            <a th:href="@{/roles}" class="list-group-item list-group-item-action"
+               sec:authorize="hasRole('ADMINISTRADOR')">
                 <i class="bi bi-shield"></i> Roles
             </a>
 
