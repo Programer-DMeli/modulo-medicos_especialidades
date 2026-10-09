@@ -1,13 +1,22 @@
 package com.tecsup.medicos_especialidades04.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-// Pregunta 1 - Relaciones: TODO (Angie): revisar/completar las relaciones del medico
 @Entity
 @Table(name = "medico")
 public class Medico {
-    // TODO (Angie): agregar @OneToMany con horarios y medico_especialidades
+
+    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnore
+    private List<HorarioAtencion> horarios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnore
+    private List<MedicoEspecialidad> medicoEspecialidades = new ArrayList<>();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -188,4 +197,19 @@ public class Medico {
         this.estado = estado;
     }
 
+    public List<HorarioAtencion> getHorarios() {
+        return horarios;
+    }
+
+    public void setHorarios(List<HorarioAtencion> horarios) {
+        this.horarios = horarios;
+    }
+
+    public List<MedicoEspecialidad> getMedicoEspecialidades() {
+        return medicoEspecialidades;
+    }
+
+    public void setMedicoEspecialidades(List<MedicoEspecialidad> medicoEspecialidades) {
+        this.medicoEspecialidades = medicoEspecialidades;
+    }
 }

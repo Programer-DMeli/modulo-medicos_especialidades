@@ -4,12 +4,12 @@ import com.tecsup.medicos_especialidades04.Model.Usuario;
 import com.tecsup.medicos_especialidades04.Repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-// TODO (Angie): completar logica de validaciones, encriptar password, etc.
 @Service
 public class UsuarioService {
 
@@ -18,6 +18,9 @@ public class UsuarioService {
 
     @Autowired
     private AuditoriaService auditoriaService;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public List<Usuario> listar() {
         return usuarioRepository.findAll();
@@ -28,7 +31,17 @@ public class UsuarioService {
     }
 
     public Usuario registrar(Usuario usuario) {
-        // TODO (Angie): validar username unico, encriptar password con BCrypt
+        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username es obligatorio");
+        }
+        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena es obligatoria");
+        }
+        if (usuarioRepository.existsByUsername(usuario.getUsername().trim())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
+        }
+        usuario.setUsername(usuario.getUsername().trim());
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         Usuario saved = usuarioRepository.save(usuario);
         auditoriaService.registrarOperacion("CREATE", "Usuario", saved.getIdUsuario());
         return saved;
@@ -42,10 +55,14 @@ public class UsuarioService {
         existente.setEstado(usuario.getEstado());
         existente.setRol(usuario.getRol());
         if (usuario.getUsername() != null && !usuario.getUsername().isBlank()) {
-            existente.setUsername(usuario.getUsername());
+            String nuevo = usuario.getUsername().trim();
+            if (!nuevo.equals(existente.getUsername()) && usuarioRepository.existsByUsername(nuevo)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
+            }
+            existente.setUsername(nuevo);
         }
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
-            existente.setPassword(usuario.getPassword());
+            existente.setPassword(passwordEncoder.encode(usuario.getPassword()));
         }
         Usuario saved = usuarioRepository.save(existente);
         auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
@@ -62,8 +79,12 @@ public class UsuarioService {
         return saved;
     }
 
-    public void eliminar(Long id) {
-        usuarioRepository.deleteById(id);
-        auditoriaService.registrarOperacion("DELETE", "Usuario", id);
+    public Usuario desactivar(Long id) {
+        Usuario existente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        existente.setEstado(false);
+        Usuario saved = usuarioRepository.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        return saved;
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// TODO (Angie): completar CRUD y validaciones
 @RestController
 @RequestMapping("/api/roles")
 @CrossOrigin(origins = "*")

@@ -1,5 +1,6 @@
 package com.tecsup.medicos_especialidades04.Model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -15,8 +16,9 @@ public class Usuario {
     @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", nullable = false, length = 100)
-    private String password; // TODO (Angie): encriptar con BCrypt
+    private String password;
 
     @Column(name = "nombres", nullable = false, length = 100)
     private String nombres;
@@ -33,8 +35,6 @@ public class Usuario {
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
-
-    // TODO (Angie): relacion @ManyToMany con roles si se necesitan multiples roles
 
     public Usuario() {
     }

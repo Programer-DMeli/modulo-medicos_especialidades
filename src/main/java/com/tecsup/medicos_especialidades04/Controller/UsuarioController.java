@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// TODO (Angie): completar CRUD y activar/desactivar
 @RestController
 @RequestMapping("/api/usuarios")
 @CrossOrigin(origins = "*")
@@ -38,7 +37,6 @@ public class UsuarioController {
         return ResponseEntity.ok(service.actualizar(id, usuario));
     }
 
-    // TODO (Angie): implementar endpoint PUT /{id}/estado?activo=true|false
     @PutMapping("/{id}/estado")
     public ResponseEntity<Usuario> cambiarEstado(@PathVariable Long id, @RequestParam Boolean activo) {
         return ResponseEntity.ok(service.cambiarEstado(id, activo));
@@ -46,7 +44,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        service.eliminar(id);
+        service.desactivar(id);
         return ResponseEntity.noContent().build();
     }
 }
