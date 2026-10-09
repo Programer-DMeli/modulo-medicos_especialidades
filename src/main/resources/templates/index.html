@@ -40,11 +40,21 @@
                 </p>
             </div>
 
+            <!-- Invitado sin sesión -->
+            <div class="alert alert-info" sec:authorize="isAnonymous()">
+                <i class="bi bi-info-circle"></i>
+                <strong>Inicia sesión</strong> para acceder a los módulos del sistema.
+                <a th:href="@{/login}" class="alert-link fw-bold">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Ir al login
+                </a>
+            </div>
+
             <!-- Tarjetas -->
             <div class="row g-4">
 
                 <!-- Médicos -->
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')">
                     <div class="card dashboard-card border-primary shadow-sm">
                         <div class="card-body text-center">
                             <i class="bi bi-person-badge-fill icon-dashboard text-primary"></i>
@@ -63,7 +73,7 @@
                 </div>
 
                 <!-- Especialidades -->
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-6 col-xl-3" sec:authorize="isAuthenticated()">
                     <div class="card dashboard-card border-success shadow-sm">
                         <div class="card-body text-center">
                             <i class="bi bi-heart-pulse-fill icon-dashboard text-success"></i>
@@ -82,7 +92,7 @@
                 </div>
 
                 <!-- Horarios -->
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
                     <div class="card dashboard-card border-warning shadow-sm">
                         <div class="card-body text-center">
                             <i class="bi bi-calendar-week-fill icon-dashboard text-warning"></i>
@@ -101,7 +111,7 @@
                 </div>
 
                 <!-- Consultorios -->
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
                     <div class="card dashboard-card border-danger shadow-sm">
                         <div class="card-body text-center">
                             <i class="bi bi-hospital-fill icon-dashboard text-danger"></i>

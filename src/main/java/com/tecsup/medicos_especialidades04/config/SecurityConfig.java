@@ -4,6 +4,7 @@ import com.tecsup.medicos_especialidades04.Service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -37,9 +38,17 @@ public class SecurityConfig {
             .userDetailsService(userDetailsService)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                .requestMatchers("/productos/**", "/roles/**", "/api/productos/**").hasRole("ADMINISTRADOR")
-                .requestMatchers("/medicos/**", "/api/medicos/**").hasRole("MEDICO")
-                .requestMatchers("/consultorios/**", "/horarios/**").hasRole("RECEPCIONISTA")
+                // Usuarios, roles y auditoria: solo administrador
+                .requestMatchers("/usuarios/**", "/roles/**", "/api/usuarios/**",
+                        "/api/roles/**", "/auditoria/**", "/api/auditoria/**")
+                    .hasRole("ADMINISTRADOR")
+                // Listado de medicos disponible para cualquier usuario autenticado (selects de otros modulos)
+                .requestMatchers(HttpMethod.GET, "/api/medicos/**").authenticated()
+                // Medicos: administrador o medico
+                .requestMatchers("/medicos/**", "/api/medicos/**").hasAnyRole("ADMINISTRADOR", "MEDICO")
+                // Horarios y consultorios: administrador o recepcionista
+                .requestMatchers("/horarios/**", "/consultorios/**", "/api/horarios/**", "/api/consultorios/**")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

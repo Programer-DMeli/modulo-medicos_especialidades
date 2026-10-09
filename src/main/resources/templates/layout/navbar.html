@@ -22,6 +22,13 @@
 
             <ul class="navbar-nav ms-auto">
 
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link" th:href="@{/login}">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Iniciar sesión
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link active" th:href="@{/}">
                         <i class="bi bi-house-door-fill"></i>
