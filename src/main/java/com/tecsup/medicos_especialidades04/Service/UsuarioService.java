@@ -28,7 +28,16 @@ public class UsuarioService {
     }
 
     public Usuario registrar(Usuario usuario) {
-        // TODO (Angie): validar username unico, encriptar password con BCrypt
+        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username es obligatorio");
+        }
+        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena es obligatoria");
+        }
+        if (usuarioRepository.existsByUsername(usuario.getUsername().trim())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
+        }
+        usuario.setUsername(usuario.getUsername().trim());
         Usuario saved = usuarioRepository.save(usuario);
         auditoriaService.registrarOperacion("CREATE", "Usuario", saved.getIdUsuario());
         return saved;
@@ -42,7 +51,11 @@ public class UsuarioService {
         existente.setEstado(usuario.getEstado());
         existente.setRol(usuario.getRol());
         if (usuario.getUsername() != null && !usuario.getUsername().isBlank()) {
-            existente.setUsername(usuario.getUsername());
+            String nuevo = usuario.getUsername().trim();
+            if (!nuevo.equals(existente.getUsername()) && usuarioRepository.existsByUsername(nuevo)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
+            }
+            existente.setUsername(nuevo);
         }
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
             existente.setPassword(usuario.getPassword());
