@@ -4,6 +4,7 @@ import com.tecsup.medicos_especialidades04.Model.Auditoria;
 import com.tecsup.medicos_especialidades04.Repository.AuditoriaRepository;
 import com.tecsup.medicos_especialidades04.config.AuditUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +16,8 @@ public class AuditoriaService {
     private AuditoriaRepository auditoriaRepository;
 
     public List<Auditoria> listar() {
-        return auditoriaRepository.findAll();
+        // Mas recientes primero
+        return auditoriaRepository.findAll(Sort.by(Sort.Direction.DESC, "idAuditoria"));
     }
 
     public Auditoria registrarOperacion(String operacion, String entidad, Long registroId) {

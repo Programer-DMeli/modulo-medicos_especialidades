@@ -110,4 +110,9 @@ public class HomeController {
         model.addAttribute("rolId", id);
         return "roles/editar";
     }
+
+    @GetMapping("/auditoria")
+    public String listarAuditoria() {
+        return "auditoria/listar";
+    }
 }

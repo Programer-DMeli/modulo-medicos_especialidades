@@ -489,6 +489,27 @@ async function initRolesPage() {
     await listRoles();
 }
 
+// === PREGUNTA 2 - AUDITORIA: visor de registros ===
+
+function auditOperation(operation) {
+    const colors = { INSERT: "success", UPDATE: "warning text-dark", DELETE: "danger" };
+    return `<span class="badge rounded-pill text-bg-${colors[operation] || "secondary"}">${escapeHtml(operation || "-")}</span>`;
+}
+
+async function listAudit() {
+    const registros = await api("/api/auditoria");
+    const body = document.querySelector("#tabla-auditoria");
+    body.innerHTML = registros.length ? registros.map(a => `
+        <tr>
+            <td>${a.idAuditoria}</td>
+            <td>${escapeHtml((a.fechaHora || "").replace("T", " "))}</td>
+            <td><strong>${escapeHtml(a.usuario || "-")}</strong></td>
+            <td>${auditOperation(a.operacion)}</td>
+            <td>${escapeHtml(a.entidad || "-")}</td>
+            <td>${a.registroId ?? "-"}</td>
+        </tr>`).join("") : emptyRow(6, "No hay operaciones registradas");
+}
+
 function activateNavigation() {
     const section = location.pathname.split("/")[1];
     document.querySelectorAll(".navbar .nav-link").forEach(link => {
@@ -514,7 +535,8 @@ const pageInitializers = {
     "usuarios-editar": editUser,
     "roles-listar": listRoles,
     "roles-registrar": registerRole,
-    "roles-editar": editRole
+    "roles-editar": editRole,
+    "auditoria-listar": listAudit
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
