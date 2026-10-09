@@ -17,8 +17,6 @@ public class Rol {
     @Column(name = "descripcion", length = 200)
     private String descripcion;
 
-    // TODO (Angie): agregar relacion inversa @OneToMany con Usuario
-
     public Rol() {
     }
 

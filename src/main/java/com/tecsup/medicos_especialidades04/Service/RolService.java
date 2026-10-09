@@ -10,7 +10,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-// TODO (Angie): completar logica de validaciones y reglas de negocio
 @Service
 public class RolService {
 
@@ -45,7 +44,6 @@ public class RolService {
     }
 
     public Rol actualizar(Long id, Rol rol) {
-        // TODO (Angie): completar actualizacion
         Rol existente = rolRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rol no encontrado"));
         existente.setNombre(rol.getNombre());
