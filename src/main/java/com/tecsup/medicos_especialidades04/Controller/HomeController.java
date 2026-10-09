@@ -12,6 +12,16 @@ public class HomeController {
         return "index";
     }
 
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    @GetMapping("/403")
+    public String accesoDenegado() {
+        return "403";
+    }
+
     @GetMapping("/medicos")
     public String listarMedicos() {
         return "medicos/listar";
