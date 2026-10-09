@@ -2,6 +2,7 @@ package com.tecsup.medicos_especialidades04.Service;
 
 import com.tecsup.medicos_especialidades04.Model.Rol;
 import com.tecsup.medicos_especialidades04.Repository.RolRepository;
+import com.tecsup.medicos_especialidades04.Repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ public class RolService {
     private RolRepository rolRepository;
 
     @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
     private AuditoriaService auditoriaService;
 
     public List<Rol> listar() {
@@ -28,7 +32,13 @@ public class RolService {
     }
 
     public Rol registrar(Rol rol) {
-        // TODO (Angie): validar nombre unico y obligatorio
+        if (rol.getNombre() == null || rol.getNombre().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del rol es obligatorio");
+        }
+        if (rolRepository.existsByNombre(rol.getNombre().trim())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El rol ya existe");
+        }
+        rol.setNombre(rol.getNombre().trim());
         Rol saved = rolRepository.save(rol);
         auditoriaService.registrarOperacion("CREATE", "Rol", saved.getIdRol());
         return saved;
@@ -46,7 +56,9 @@ public class RolService {
     }
 
     public void eliminar(Long id) {
-        // TODO (Angie): validar que no tenga usuarios asociados antes de eliminar
+        if (usuarioRepository.existeRolEnUso(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar: hay usuarios con este rol");
+        }
         rolRepository.deleteById(id);
         auditoriaService.registrarOperacion("DELETE", "Rol", id);
     }
