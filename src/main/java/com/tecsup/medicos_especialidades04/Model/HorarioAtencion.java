@@ -1,13 +1,14 @@
 package com.tecsup.medicos_especialidades04.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalTime;
 
-// Pregunta 1 - Relaciones: TODO (Meliton): revisar/completar las relaciones del horario
+// Pregunta 1 - Relaciones: (Meliton) relaciones @ManyToOne verificadas y completadas
 @Entity
 @Table(name = "horario_atencion")
 public class HorarioAtencion {
-    // TODO (Meliton): verificar @ManyToOne medico y consultorio ya existentes
+    // Relaciones @ManyToOne verificadas: medico (obligatorio) y consultorio (opcional)
 
 
     @Id
@@ -15,12 +16,14 @@ public class HorarioAtencion {
     @Column(name = "id_horario")
     private Long idHorario;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medico_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Medico medico;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "consultorio_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Consultorio consultorio;
 
     @Column(name = "dia_semana", nullable = false, length = 20)
