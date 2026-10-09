@@ -2,7 +2,6 @@ package com.tecsup.medicos_especialidades04.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +10,11 @@ import java.util.List;
 @Table(name = "medico")
 public class Medico {
 
-    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore
     private List<HorarioAtencion> horarios = new ArrayList<>();
 
-    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore
     private List<MedicoEspecialidad> medicoEspecialidades = new ArrayList<>();
 
