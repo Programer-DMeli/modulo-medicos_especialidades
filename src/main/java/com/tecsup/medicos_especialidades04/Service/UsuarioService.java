@@ -4,12 +4,12 @@ import com.tecsup.medicos_especialidades04.Model.Usuario;
 import com.tecsup.medicos_especialidades04.Repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-// TODO (Angie): completar logica de validaciones, encriptar password, etc.
 @Service
 public class UsuarioService {
 
@@ -18,6 +18,9 @@ public class UsuarioService {
 
     @Autowired
     private AuditoriaService auditoriaService;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public List<Usuario> listar() {
         return usuarioRepository.findAll();
@@ -38,6 +41,7 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
         }
         usuario.setUsername(usuario.getUsername().trim());
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         Usuario saved = usuarioRepository.save(usuario);
         auditoriaService.registrarOperacion("CREATE", "Usuario", saved.getIdUsuario());
         return saved;
@@ -58,7 +62,7 @@ public class UsuarioService {
             existente.setUsername(nuevo);
         }
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
-            existente.setPassword(usuario.getPassword());
+            existente.setPassword(passwordEncoder.encode(usuario.getPassword()));
         }
         Usuario saved = usuarioRepository.save(existente);
         auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
