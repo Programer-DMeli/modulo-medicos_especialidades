@@ -53,6 +53,11 @@ public class ConsultorioController {
         return ResponseEntity.ok(service.actualizar(id, consultorio));
     }
 
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<Consultorio> cambiarEstado(@PathVariable Long id, @RequestParam com.tecsup.medicos_especialidades04.Model.EstadoConsultorio estado) {
+        return ResponseEntity.ok(service.cambiarEstado(id, estado));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);

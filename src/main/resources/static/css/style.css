@@ -70,6 +70,10 @@ small,.small {font-size:.8125rem}
 .table .btn-group .btn {border-radius:7px!important}
 .table .btn {white-space:nowrap;font-size:.75rem;min-height:32px}
 .badge {font-size:.6875rem;font-weight:600;padding:6px 9px;letter-spacing:.015em}
+.status-toggle {border:0;padding:0;border-radius:999px;background:transparent;line-height:0;cursor:pointer}
+.status-toggle:hover .badge {filter:brightness(.95)}
+.status-toggle:focus-visible {outline:3px solid #4675d3;outline-offset:3px}
+.status-toggle:disabled {cursor:wait;opacity:.65}
 .loading-cell,.empty-cell {padding:45px 20px!important;color:var(--muted)!important;text-align:center}
 .empty-cell i {display:block;font-size:1.5rem;color:#8a9bb2;margin-bottom:10px}
 .empty-cell span {display:block}

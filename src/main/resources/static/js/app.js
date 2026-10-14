@@ -70,6 +70,20 @@ function statusBadge(status) {
     return `<span class="badge rounded-pill text-bg-${color}">${escapeHtml(label || "SIN ESTADO")}</span>`;
 }
 
+function scheduleStateControl(schedule) {
+    const alreadyClosed = schedule.vigenteHasta && schedule.vigenteHasta <= today();
+    if (!canProgram() || alreadyClosed) return statusBadge(schedule.estado);
+    const nextState = schedule.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    const action = nextState === "ACTIVO" ? "activar" : "inactivar";
+    return `<button type="button" class="status-toggle" data-toggle-schedule="${schedule.idHorario}" data-next-state="${nextState}" aria-label="${action} horario de ${escapeHtml(doctorName(schedule.medico))}" title="Haz clic para ${action} el horario">${statusBadge(schedule.estado)}</button>`;
+}
+
+function clickableState(status, selector, id, nextState, enabled = true) {
+    const badge = statusBadge(status);
+    if (!enabled) return badge;
+    return `<button type="button" class="status-toggle" ${selector}="${id}" data-next-state="${escapeHtml(nextState)}" title="Haz clic para cambiar el estado">${badge}</button>`;
+}
+
 function doctorName(doctor) {
     if (!doctor) return "Sin médico";
     return [doctor.nombres, doctor.apellidoPaterno, doctor.apellidoMaterno].filter(Boolean).join(" ");
@@ -155,11 +169,17 @@ async function listDoctors() {
             <td>${escapeHtml(doctor.tipoDocumento)} ${escapeHtml(doctor.numeroDocumento)}</td>
             <td>${escapeHtml(doctor.cmp)}<small>${escapeHtml((doctor.especialidades || []).map(e => e.nombre).join(", ") || "Pendiente de especialidad")}</small></td>
             <td><div>${escapeHtml(doctor.telefono || "-")}</div><small>${escapeHtml(doctor.correo || "Sin correo")}</small></td>
-            <td>${statusBadge(doctor.estado)}</td>
+            <td>${clickableState(doctor.estado, "data-toggle-doctor", doctor.idMedico, doctor.estado === "ACTIVO" ? "SUSPENDIDO" : "ACTIVO", canMaintainDoctors() && doctor.estado !== "VACACIONES")}</td>
             <td class="text-end"><div class="d-flex gap-2 justify-content-end"><a class="btn btn-sm btn-outline-primary" href="/horarios?medicoId=${doctor.idMedico}">Ver horario</a>${canMaintainDoctors() ? `<a class="btn btn-sm btn-outline-secondary" href="/medicos/registrar?id=${doctor.idMedico}">Editar</a><button class="btn btn-sm btn-outline-danger" data-delete-doctor="${doctor.idMedico}" aria-label="Eliminar a ${escapeHtml(doctorName(doctor))}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ""}</div></td>
         </tr>`).join("") : emptyRow(7, "No hay médicos registrados");
 
     body.addEventListener("click", async event => {
+        const stateButton = event.target.closest("[data-toggle-doctor]");
+        if (stateButton) {
+            try { await api(`/api/medicos/${stateButton.dataset.toggleDoctor}/estado?estado=${stateButton.dataset.nextState}`, { method: "PUT" }); setFlash("Estado del médico actualizado"); location.reload(); }
+            catch (error) { showMessage(error.message); }
+            return;
+        }
         const button = event.target.closest("[data-delete-doctor]");
         if (!button || !confirm("¿Eliminar este médico?")) return;
         try {
@@ -222,11 +242,17 @@ async function listSpecialties() {
             <td><div class="table-title">${escapeHtml(item.nombre)}</div></td>
             <td>${escapeHtml(item.descripcion || "-")}</td>
             <td>${escapeHtml(item.duracionConsulta)} min</td>
-            <td>${statusBadge(item.estado)}</td>
+            <td>${clickableState(item.estado, "data-toggle-specialty", item.idEspecialidad, !item.estado, isAdmin())}</td>
             <td class="text-end">${isAdmin() ? `<a class="btn btn-sm btn-outline-secondary" href="/especialidades/registrar?id=${item.idEspecialidad}">Editar</a> <button class="btn btn-sm btn-outline-danger" data-delete-specialty="${item.idEspecialidad}" aria-label="Eliminar ${escapeHtml(item.nombre)}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : '<span class="text-muted">Consulta</span>'}</td>
         </tr>`).join("") : emptyRow(6, "No hay especialidades registradas");
 
     body.addEventListener("click", async event => {
+        const stateButton = event.target.closest("[data-toggle-specialty]");
+        if (stateButton) {
+            try { await api(`/api/especialidades/${stateButton.dataset.toggleSpecialty}/estado?estado=${stateButton.dataset.nextState}`, { method: "PUT" }); setFlash("Estado de la especialidad actualizado"); location.reload(); }
+            catch (error) { showMessage(error.message); }
+            return;
+        }
         const button = event.target.closest("[data-delete-specialty]");
         if (!button || !confirm("¿Eliminar esta especialidad?")) return;
         try {
@@ -392,13 +418,27 @@ async function listSchedules() {
             <td>${escapeHtml(item.duracionCita)} min</td>
             <td>${item.consultorio ? escapeHtml(`${item.consultorio.codigo} · ${item.consultorio.nombre}`) : '<span class="badge text-bg-warning">Pendiente</span>'}</td>
             <td>${item.vigenteDesde ? `${escapeHtml(formatDate(item.vigenteDesde))}<small>${item.vigenteHasta ? `Hasta ${escapeHtml(formatDate(item.vigenteHasta))}` : "Sin fecha final"}</small>` : '<span class="badge text-bg-warning">Revisar vigencia</span>'}</td>
-            <td>${statusBadge(item.estado)}</td>
+            <td>${scheduleStateControl(item)}</td>
             <td class="text-end">${canProgram() ? `<div class="btn-group"><a class="btn btn-sm btn-outline-primary" href="/horarios/editar/${item.idHorario}">Editar</a><button class="btn btn-sm btn-outline-danger" data-delete-schedule="${item.idHorario}" aria-label="Retirar horario de ${escapeHtml(doctorName(item.medico))}"><i class="bi bi-trash" aria-hidden="true"></i></button></div>` : '<span class="text-muted">Consulta</span>'}</td>
         </tr>`).join("") : emptyRow(8, schedules.length ? "No hay horarios con estos filtros." : "Aún no hay horarios. Configura la primera franja habitual de un médico.");
     };
     render();
     document.querySelectorAll("#filtro-medico, #filtro-dia, #filtro-estado, #buscar-horarios").forEach(field => field.addEventListener("input", render));
     body.addEventListener("click", async event => {
+        const stateButton = event.target.closest("[data-toggle-schedule]");
+        if (stateButton) {
+            const nextState = stateButton.dataset.nextState;
+            stateButton.disabled = true;
+            try {
+                await api(`/api/horarios/${stateButton.dataset.toggleSchedule}/estado?estado=${nextState}`, { method: "PUT" });
+                setFlash(nextState === "ACTIVO" ? "Horario activado correctamente." : "Horario inactivado correctamente.");
+                location.reload();
+            } catch (error) {
+                stateButton.disabled = false;
+                showMessage(error.message);
+            }
+            return;
+        }
         const button = event.target.closest("[data-delete-schedule]");
         if (!button || !confirm("¿Retirar este horario? Si ya comenzó, se conservará su historial y se cerrará su vigencia.")) return;
         try {
@@ -453,11 +493,17 @@ async function listOffices() {
             <td><div class="table-title">${escapeHtml(item.nombre)}</div></td>
             <td>Piso ${escapeHtml(item.piso)} · ${escapeHtml(item.area)}</td>
             <td>${escapeHtml(item.especialidad?.nombre || "Sin especialidad")}</td>
-            <td>${statusBadge(item.estado)}</td>
+            <td>${clickableState(item.estado, "data-toggle-office", item.id, item.estado === "INACTIVO" ? "DISPONIBLE" : "INACTIVO", canProgram() && item.estado !== "OCUPADO")}</td>
             <td class="text-end">${canProgram() ? `<a class="btn btn-sm btn-outline-secondary" href="/consultorios/registrar?id=${item.id}">Editar</a> <button class="btn btn-sm btn-outline-danger" data-delete-office="${item.id}" aria-label="Eliminar consultorio ${escapeHtml(item.codigo)}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : '<span class="text-muted">Consulta</span>'}</td>
         </tr>`).join("") : emptyRow(6, "No hay consultorios registrados");
 
     body.addEventListener("click", async event => {
+        const stateButton = event.target.closest("[data-toggle-office]");
+        if (stateButton) {
+            try { await api(`/api/consultorios/${stateButton.dataset.toggleOffice}/estado?estado=${stateButton.dataset.nextState}`, { method: "PUT" }); setFlash("Estado del consultorio actualizado"); location.reload(); }
+            catch (error) { showMessage(error.message); }
+            return;
+        }
         const button = event.target.closest("[data-delete-office]");
         if (!button || !confirm("¿Eliminar este consultorio?")) return;
         try {
@@ -531,10 +577,9 @@ async function listUsers() {
             <td>${escapeHtml(u.nombres)}</td>
             <td>${escapeHtml(u.correo || "-")}</td>
             <td>${escapeHtml(u.rol?.nombre || "-")}</td>
-            <td>${statusBadge(u.estado)}</td>
+            <td>${clickableState(u.estado, "data-toggle-user", u.idUsuario, !u.estado, true)}</td>
             <td class="text-end"><div class="btn-group">
                 <a class="btn btn-sm btn-outline-primary" href="/usuarios/editar/${u.idUsuario}" title="Editar"><i class="bi bi-pencil"></i></a>
-                <button class="btn btn-sm btn-outline-warning" data-toggle-user="${u.idUsuario}" data-active="${u.estado}" title="Activar/Desactivar"><i class="bi bi-toggle-on"></i></button>
                 <button class="btn btn-sm btn-outline-danger" data-delete-user="${u.idUsuario}" title="Eliminar"><i class="bi bi-trash"></i></button>
             </div></td>
         </tr>`).join("") : emptyRow(6, "No hay usuarios registrados");
@@ -546,7 +591,7 @@ async function listUsers() {
             try { await api(`/api/usuarios/${del.dataset.deleteUser}`, { method: "DELETE" }); setFlash("Usuario eliminado"); location.reload(); } catch (e) { showMessage(e.message); }
         }
         if (tog) {
-            const nuevo = tog.dataset.active === "true" ? "false" : "true";
+            const nuevo = tog.dataset.nextState;
             try { await api(`/api/usuarios/${tog.dataset.toggleUser}/estado?activo=${nuevo}`, { method: "PUT" }); setFlash("Estado actualizado"); location.reload(); } catch (e) { showMessage(e.message); }
         }
     });
@@ -609,10 +654,9 @@ async function listRoles() {
         <tr>
             <td><strong>${escapeHtml(r.nombre)}</strong></td>
             <td>${escapeHtml(r.descripcion || "-")}</td>
-            <td>${statusBadge(r.estado)}</td>
+            <td>${clickableState(r.estado, "data-toggle-role", r.idRol, !r.estado, true)}</td>
             <td class="text-end"><div class="btn-group">
                 <a class="btn btn-sm btn-outline-primary" href="/roles/editar/${r.idRol}" aria-label="Editar ${escapeHtml(r.nombre)}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
-                <button class="btn btn-sm btn-outline-secondary" data-toggle-role="${r.idRol}" data-active="${r.estado}">${r.estado ? "Desactivar" : "Activar"}</button>
                 <button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}" aria-label="Eliminar ${escapeHtml(r.nombre)}"><i class="bi bi-trash" aria-hidden="true"></i></button>
             </div></td>
         </tr>`).join("") : emptyRow(4, "No hay roles registrados");
@@ -621,7 +665,7 @@ async function listRoles() {
         const del = event.target.closest("[data-delete-role]");
         const toggle = event.target.closest("[data-toggle-role]");
         if (toggle) {
-            const active = toggle.dataset.active !== "true";
+            const active = toggle.dataset.nextState === "true";
             if (!active && !confirm("¿Desactivar este rol? Los usuarios que lo tengan asignado no podrán acceder al sistema.")) return;
             try { await api(`/api/roles/${toggle.dataset.toggleRole}/estado?activo=${active}`, { method: "PUT" }); setFlash("Estado del rol actualizado"); location.reload(); } catch (error) { showMessage(error.message); }
         }
@@ -833,7 +877,7 @@ async function initAbsences() {
         const items = await api("/api/horarios/ausencias");
         body.innerHTML = items.length ? items.map(item => `<tr><td><div class="table-title">${escapeHtml(doctorName(item.medico))}</div></td>
             <td>${escapeHtml(formatDate(item.inicio))} · ${escapeHtml(item.inicio.slice(11, 16))}<small>Hasta ${escapeHtml(formatDate(item.fin))} · ${escapeHtml(item.fin.slice(11, 16))}</small></td>
-            <td>${escapeHtml(item.motivo)}</td><td>${item.estado === "ACTIVO" && item.fin <= nowLocal() ? '<span class="badge text-bg-secondary">Finalizada</span>' : statusBadge(item.estado)}</td>
+            <td>${escapeHtml(item.motivo)}</td><td>${item.estado === "ACTIVO" && item.fin <= nowLocal() ? '<span class="badge text-bg-secondary">Finalizada</span>' : clickableState(item.estado, "data-cancel-absence", item.idAusencia, "cancel", canProgram() && item.estado === "ACTIVO" && item.fin > nowLocal())}</td>
             <td class="text-end">${canProgram() && item.estado === "ACTIVO" && item.fin > nowLocal() ? `<button class="btn btn-sm btn-outline-danger" data-cancel-absence="${item.idAusencia}">${item.inicio <= nowLocal() ? "Finalizar" : "Anular"}</button>` : '<span class="text-muted">—</span>'}</td></tr>`).join("") : emptyRow(5, "No hay ausencias registradas. El horario habitual se aplica con normalidad.");
     };
     body.addEventListener("click", async event => {

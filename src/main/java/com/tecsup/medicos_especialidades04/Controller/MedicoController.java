@@ -1,6 +1,7 @@
 package com.tecsup.medicos_especialidades04.Controller;
 
 import com.tecsup.medicos_especialidades04.Model.Medico;
+import com.tecsup.medicos_especialidades04.Model.EstadoMedico;
 import com.tecsup.medicos_especialidades04.Service.MedicoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -64,6 +65,11 @@ public class MedicoController {
         existente.setEspecialidadIds(medico.getEspecialidadIds());
 
         return ResponseEntity.ok(service.guardar(existente));
+    }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<Medico> cambiarEstado(@PathVariable Long id, @RequestParam EstadoMedico estado) {
+        return ResponseEntity.ok(service.cambiarEstado(id, estado));
     }
 
     @DeleteMapping("/{id}")

@@ -40,6 +40,19 @@ public class ConsultorioService {
     }
 
     @Transactional
+    public Consultorio cambiarEstado(Long id, EstadoConsultorio estado) {
+        if (estado == null || estado == EstadoConsultorio.OCUPADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado debe ser DISPONIBLE o INACTIVO; la ocupación se calcula por horario");
+        }
+        Consultorio consultorio = consultorioRepository.bloquearPorId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultorio no encontrado"));
+        consultorio.setEstado(estado);
+        Consultorio guardado = consultorioRepository.save(consultorio);
+        auditoriaService.registrarOperacion("UPDATE", "Consultorio", id);
+        return guardado;
+    }
+
+    @Transactional
     public Consultorio registrar(Consultorio consultorio) {
         validarDatos(consultorio);
 

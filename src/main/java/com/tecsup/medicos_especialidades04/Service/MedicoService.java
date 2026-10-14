@@ -41,6 +41,18 @@ public class MedicoService {
         return repo.findAll();
     }
 
+    public Medico cambiarEstado(Long id, EstadoMedico estado) {
+        if (estado == null || estado == EstadoMedico.VACACIONES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado debe ser ACTIVO o SUSPENDIDO; registra las vacaciones como ausencia");
+        }
+        Medico medico = repo.bloquearPorId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Médico no encontrado"));
+        medico.setEstado(estado);
+        Medico guardado = repo.save(medico);
+        auditoriaService.registrarOperacion("UPDATE", "Medico", id);
+        return guardado;
+    }
+
     public Medico guardar(Medico medico) {
         boolean nuevo = medico.getIdMedico() == null;
         Medico anterior = nuevo ? null : repo.bloquearPorId(medico.getIdMedico())

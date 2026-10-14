@@ -59,6 +59,31 @@ public class HorarioAtencionService {
         return actualizarBloqueado(existente, horario);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public HorarioAtencion cambiarEstado(Long id, String estado) {
+        HorarioAtencion existente = repo.bloquearPorId(id).orElse(null);
+        if (existente == null) return null;
+
+        String nuevoEstado = normalizarEstado(estado);
+        if (nuevoEstado.equals(existente.getEstado())) return existente;
+        if (existente.getVigenteDesde() == null) {
+            throw error(HttpStatus.CONFLICT, "Completa la vigencia del horario antes de cambiar su estado");
+        }
+        if (existente.getVigenteHasta() != null && !existente.getVigenteHasta().isAfter(hoy())) {
+            throw error(HttpStatus.CONFLICT, "Este horario ya terminó o fue reemplazado; cambia el estado de su versión vigente");
+        }
+
+        HorarioAtencion solicitud = copiar(existente);
+        solicitud.setEstado(nuevoEstado);
+        validarDatos(solicitud);
+        bloquearRecursos(solicitud, existente);
+        validarCruces(solicitud, existente.getIdHorario());
+        copiarDatos(solicitud, existente);
+        HorarioAtencion guardado = repo.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", guardado.getIdHorario());
+        return guardado;
+    }
+
     // También la utiliza ConsultorioService: ninguna ruta evita las reglas.
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public HorarioAtencion asignarConsultorio(Long consultorioId, Long horarioId) {
@@ -217,6 +242,7 @@ public class HorarioAtencionService {
         if (!"ACTIVO".equals(nuevo.getEstado())) return;
         for (HorarioAtencion otro : repo.buscarPorRecursos(idMedico(nuevo.getMedico()), idConsultorio(nuevo.getConsultorio()))) {
             if (Objects.equals(otro.getIdHorario(), excluirId)) continue;
+            if (!"ACTIVO".equals(otro.getEstado())) continue;
             if (!normalizarDia(otro.getDiaSemana()).equals(nuevo.getDiaSemana())) continue;
             if (!nuevo.getHoraInicio().isBefore(otro.getHoraFin()) || !nuevo.getHoraFin().isAfter(otro.getHoraInicio())) continue;
             LocalDate desde = nuevo.getVigenteDesde().isAfter(otro.getVigenteDesde()) ? nuevo.getVigenteDesde() : otro.getVigenteDesde();

@@ -81,6 +81,18 @@ public class HorarioAtencionController {
         }
         return ResponseEntity.ok(actualizado);
     }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<HorarioAtencion> cambiarEstado(
+            @PathVariable Long id,
+            @RequestParam String estado) {
+        HorarioAtencion actualizado = service.cambiarEstado(id, estado);
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(actualizado);
+    }
+
     //eliminar Horario
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
