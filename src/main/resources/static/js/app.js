@@ -142,7 +142,8 @@ function invalidField(field, message) {
 
 function canProgram() { return document.body.dataset.canManage === "true"; }
 function isAdmin() { return document.body.dataset.isAdmin === "true"; }
-function canMaintainDoctors() { return isAdmin() || document.body.dataset.role === "MEDICO"; }
+function canMaintainDoctors() { return isAdmin(); }
+function canDeleteDoctors() { return isAdmin(); }
 function today() { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(new Date()); }
 function nowLocal() { return `${today()}T${new Intl.DateTimeFormat("en-GB", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date())}`; }
 function addDays(value, days) {
@@ -170,7 +171,7 @@ async function listDoctors() {
             <td>${escapeHtml(doctor.cmp)}<small>${escapeHtml((doctor.especialidades || []).map(e => e.nombre).join(", ") || "Pendiente de especialidad")}</small></td>
             <td><div>${escapeHtml(doctor.telefono || "-")}</div><small>${escapeHtml(doctor.correo || "Sin correo")}</small></td>
             <td>${clickableState(doctor.estado, "data-toggle-doctor", doctor.idMedico, doctor.estado === "ACTIVO" ? "SUSPENDIDO" : "ACTIVO", canMaintainDoctors() && doctor.estado !== "VACACIONES")}</td>
-            <td class="text-end"><div class="d-flex gap-2 justify-content-end"><a class="btn btn-sm btn-outline-primary" href="/horarios?medicoId=${doctor.idMedico}">Ver horario</a>${canMaintainDoctors() ? `<a class="btn btn-sm btn-outline-secondary" href="/medicos/registrar?id=${doctor.idMedico}">Editar</a><button class="btn btn-sm btn-outline-danger" data-delete-doctor="${doctor.idMedico}" aria-label="Eliminar a ${escapeHtml(doctorName(doctor))}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ""}</div></td>
+            <td class="text-end"><div class="d-flex gap-2 justify-content-end"><a class="btn btn-sm btn-outline-primary" href="/horarios?medicoId=${doctor.idMedico}">Ver horario</a>${canMaintainDoctors() ? `<a class="btn btn-sm btn-outline-secondary" href="/medicos/registrar?id=${doctor.idMedico}">Editar</a>` : ""}${canDeleteDoctors() ? `<button class="btn btn-sm btn-outline-danger" data-delete-doctor="${doctor.idMedico}" aria-label="Eliminar a ${escapeHtml(doctorName(doctor))}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ""}</div></td>
         </tr>`).join("") : emptyRow(7, "No hay médicos registrados");
 
     body.addEventListener("click", async event => {

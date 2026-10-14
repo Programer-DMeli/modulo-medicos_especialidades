@@ -6,7 +6,7 @@
         <div class="list-group">
             <a class="nav-link" th:href="@{/}"><i class="bi bi-grid" aria-hidden="true"></i>Inicio</a>
             <a class="nav-link" th:href="@{/horarios}" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')"><i class="bi bi-calendar-week" aria-hidden="true"></i>Horarios y agenda</a>
-            <a class="nav-link" th:href="@{/medicos}" sec:authorize="isAuthenticated()"><i class="bi bi-person-badge" aria-hidden="true"></i>Médicos</a>
+            <a class="nav-link" th:href="@{/medicos}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-person-badge" aria-hidden="true"></i>Médicos</a>
             <a class="nav-link" th:href="@{/especialidades}" sec:authorize="isAuthenticated()"><i class="bi bi-heart-pulse" aria-hidden="true"></i>Especialidades</a>
             <a class="nav-link" th:href="@{/consultorios}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-door-open" aria-hidden="true"></i>Consultorios</a>
         </div>
