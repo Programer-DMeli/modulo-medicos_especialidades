@@ -32,10 +32,22 @@ public class EspecialidadesController {
     // Registrar especialidad
     @PostMapping
     public Especialidades guardar(@RequestBody Especialidades especialidad) {
+        especialidad.setIdEspecialidad(null);
         return service.guardar(especialidad);
     }
 
     //Activar o desactivar especialidad
+    @PutMapping("/{id}")
+    public Especialidades actualizar(@PathVariable Long id, @RequestBody Especialidades solicitud) {
+        Especialidades existente = service.obtener(id);
+        if (existente == null) throw new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "Especialidad no encontrada");
+        existente.setNombre(solicitud.getNombre());
+        existente.setDescripcion(solicitud.getDescripcion());
+        existente.setDuracionConsulta(solicitud.getDuracionConsulta());
+        if (solicitud.getEstado() != null) existente.setEstado(solicitud.getEstado());
+        return service.guardar(existente);
+    }
+
     @PutMapping("/{id}/estado")
     public Especialidades cambiarEstado(
             @PathVariable Long id,

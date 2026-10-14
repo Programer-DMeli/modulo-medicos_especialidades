@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/roles")
-@CrossOrigin(origins = "*")
 public class RolController {
 
     @Autowired
@@ -41,5 +40,10 @@ public class RolController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<Rol> cambiarEstado(@PathVariable Long id, @RequestParam Boolean activo) {
+        return ResponseEntity.ok(service.cambiarEstado(id, activo));
     }
 }

@@ -52,6 +52,16 @@ public class HomeController {
         return "horarios/listar";
     }
 
+    @GetMapping("/horarios/agenda")
+    public String agendaHorarios() {
+        return "horarios/agenda";
+    }
+
+    @GetMapping("/horarios/ausencias")
+    public String ausenciasHorarios() {
+        return "horarios/ausencias";
+    }
+
     @GetMapping("/horarios/registrar")
     public String registrarHorario() {
         return "horarios/registrar";

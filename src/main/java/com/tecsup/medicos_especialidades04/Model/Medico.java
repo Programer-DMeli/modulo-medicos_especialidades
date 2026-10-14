@@ -10,6 +10,21 @@ import java.util.List;
 @Table(name = "medico")
 public class Medico {
 
+    @Transient
+    private List<Long> especialidadIds;
+
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
+    public List<Long> getEspecialidadIds() { return especialidadIds; }
+
+    public void setEspecialidadIds(List<Long> ids) { this.especialidadIds = ids; }
+
+    public record EspecialidadMedico(Long idEspecialidad, String nombre, Integer duracionConsulta, Boolean estado) {}
+
+    public List<EspecialidadMedico> getEspecialidades() {
+        return medicoEspecialidades.stream().map(r -> r.getEspecialidad())
+                .map(e -> new EspecialidadMedico(e.getIdEspecialidad(), e.getNombre(), e.getDuracionConsulta(), e.getEstado())).toList();
+    }
+
     @OneToMany(mappedBy = "medico", fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore
     private List<HorarioAtencion> horarios = new ArrayList<>();
@@ -41,7 +56,7 @@ public class Medico {
     @Column(name = "apellido_materno", nullable = false, length = 100)
     private String apellidoMaterno;
 
-    @Column(name = "cmp", nullable = false, length = 20)
+    @Column(name = "cmp", nullable = false, unique = true, length = 20)
     private String cmp;
 
     @Column(name = "rne", length = 20)

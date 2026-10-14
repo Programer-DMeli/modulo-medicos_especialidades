@@ -1,77 +1,24 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-
-<body>
-
-<div th:fragment="sidebar" class="sidebar bg-white shadow-sm">
-
-    <div class="p-3">
-
-        <h5 class="text-primary fw-bold">
-            Menú Principal
-        </h5>
-
-        <hr>
-
-        <div class="list-group list-group-flush">
-
-            <a th:href="@{/}"
-               class="list-group-item list-group-item-action">
-
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-            </a>
-
-            <a th:href="@{/medicos}"
-               class="list-group-item list-group-item-action"
-               sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')">
-
-                <i class="bi bi-person-badge"></i>
-                Médicos
-            </a>
-
-            <a th:href="@{/especialidades}"
-               class="list-group-item list-group-item-action"
-               sec:authorize="isAuthenticated()">
-
-                <i class="bi bi-heart-pulse"></i>
-                Especialidades
-            </a>
-
-            <a th:href="@{/horarios}"
-               class="list-group-item list-group-item-action"
-               sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-
-                <i class="bi bi-calendar-event"></i>
-                Horarios
-            </a>
-
-            <a th:href="@{/consultorios}"
-               class="list-group-item list-group-item-action"
-               sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-
-                <i class="bi bi-hospital"></i>
-                Consultorios
-            </a>
-
-            <a th:href="@{/usuarios}" class="list-group-item list-group-item-action"
-               sec:authorize="hasRole('ADMINISTRADOR')">
-                <i class="bi bi-people"></i> Usuarios
-            </a>
-            <a th:href="@{/roles}" class="list-group-item list-group-item-action"
-               sec:authorize="hasRole('ADMINISTRADOR')">
-                <i class="bi bi-shield"></i> Roles
-            </a>
-            <a th:href="@{/auditoria}" class="list-group-item list-group-item-action"
-               sec:authorize="hasRole('ADMINISTRADOR')">
-                <i class="bi bi-journal-text"></i> Auditoría
-            </a>
-
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><body>
+<aside class="app-sidebar" id="menu-lateral" th:fragment="sidebar">
+    <nav aria-label="Navegación principal">
+        <p class="nav-group-title">Atención médica</p>
+        <div class="list-group">
+            <a class="nav-link" th:href="@{/}"><i class="bi bi-grid" aria-hidden="true"></i>Inicio</a>
+            <a class="nav-link" th:href="@{/horarios}" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')"><i class="bi bi-calendar-week" aria-hidden="true"></i>Horarios y agenda</a>
+            <a class="nav-link" th:href="@{/medicos}" sec:authorize="isAuthenticated()"><i class="bi bi-person-badge" aria-hidden="true"></i>Médicos</a>
+            <a class="nav-link" th:href="@{/especialidades}" sec:authorize="isAuthenticated()"><i class="bi bi-heart-pulse" aria-hidden="true"></i>Especialidades</a>
+            <a class="nav-link" th:href="@{/consultorios}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-door-open" aria-hidden="true"></i>Consultorios</a>
         </div>
-
-    </div>
-
-</div>
-
-</body>
-</html>
+        <th:block sec:authorize="hasRole('ADMINISTRADOR')">
+            <p class="nav-group-title">Administración</p>
+            <div class="list-group">
+                <a class="nav-link" th:href="@{/usuarios}"><i class="bi bi-people" aria-hidden="true"></i>Usuarios</a>
+                <a class="nav-link" th:href="@{/roles}"><i class="bi bi-shield-check" aria-hidden="true"></i>Roles</a>
+                <a class="nav-link" th:href="@{/auditoria}"><i class="bi bi-journal-text" aria-hidden="true"></i>Auditoría</a>
+            </div>
+        </th:block>
+    </nav>
+    <p class="sidebar-note">Organiza el horario habitual y revisa la atención de cada semana.</p>
+</aside>
+</body></html>

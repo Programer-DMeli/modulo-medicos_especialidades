@@ -1,240 +1,29 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión Médica</title>
-
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-    <!-- CSS -->
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
-
-<body>
-<!-- Navbar -->
-<div th:replace="layout/navbar :: navbar"></div>
-
-<div class="container-fluid">
-    <div class="row">
-
-        <!-- Sidebar -->
-        <div class="col-lg-2 col-md-3 p-0">
-            <div th:replace="layout/sidebar :: sidebar"></div>
-        </div>
-
-        <!-- Contenido -->
-        <div class="col-lg-10 col-md-9 contenido">
-
-            <div class="pt-4 pb-3">
-                <h2 class="fw-bold text-primary">
-                    Panel Principal
-                </h2>
-
-                <p class="text-muted">
-                    Bienvenido al Sistema de Gestión Médica.
-                </p>
-            </div>
-
-            <!-- Invitado sin sesión -->
-            <div class="alert alert-info" sec:authorize="isAnonymous()">
-                <i class="bi bi-info-circle"></i>
-                <strong>Inicia sesión</strong> para acceder a los módulos del sistema.
-                <a th:href="@{/login}" class="alert-link fw-bold">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Ir al login
-                </a>
-            </div>
-
-            <!-- Tarjetas -->
-            <div class="row g-4">
-
-                <!-- Médicos -->
-                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')">
-                    <div class="card dashboard-card border-primary shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-person-badge-fill icon-dashboard text-primary"></i>
-
-                            <h5 class="mt-3">Médicos</h5>
-
-                            <p class="text-muted small">
-                                Registrar y consultar médicos.
-                            </p>
-
-                            <a th:href="@{/medicos}" class="btn btn-primary w-100">
-                                Ingresar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Especialidades -->
-                <div class="col-md-6 col-xl-3" sec:authorize="isAuthenticated()">
-                    <div class="card dashboard-card border-success shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-heart-pulse-fill icon-dashboard text-success"></i>
-
-                            <h5 class="mt-3">Especialidades</h5>
-
-                            <p class="text-muted small">
-                                Administrar especialidades médicas.
-                            </p>
-
-                            <a th:href="@{/especialidades}" class="btn btn-success w-100">
-                                Ingresar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Horarios -->
-                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-                    <div class="card dashboard-card border-warning shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-calendar-week-fill icon-dashboard text-warning"></i>
-
-                            <h5 class="mt-3">Horarios</h5>
-
-                            <p class="text-muted small">
-                                Gestionar horarios de atención.
-                            </p>
-
-                            <a th:href="@{/horarios}" class="btn btn-warning text-white w-100">
-                                Ingresar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Consultorios -->
-                <div class="col-md-6 col-xl-3" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-                    <div class="card dashboard-card border-danger shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-hospital-fill icon-dashboard text-danger"></i>
-
-                            <h5 class="mt-3">Consultorios</h5>
-
-                            <p class="text-muted small">
-                                Registrar y asignar consultorios.
-                            </p>
-
-                            <a th:href="@{/consultorios}" class="btn btn-danger w-100">
-                                Ingresar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Resumen -->
-            <div class="row mt-5">
-
-                <div class="col-lg-8">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-header bg-primary text-white">
-                            Requerimientos Funcionales
-                        </div>
-
-                        <div class="card-body">
-                            <table class="table table-bordered table-hover">
-
-                                <thead class="table-light">
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Módulo</th>
-                                </tr>
-                                </thead>
-
-                                <tbody>
-                                <tr>
-                                    <td>RF-MED-01</td>
-                                    <td>Registrar Médico</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-03</td>
-                                    <td>Consultar Médicos</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-07</td>
-                                    <td>Registrar Especialidad</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-09</td>
-                                    <td>Activar/Inactivar Especialidad</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-11</td>
-                                    <td>Registrar Horario</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-12</td>
-                                    <td>Modificar Horario</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-15</td>
-                                    <td>Registrar Consultorio</td>
-                                </tr>
-
-                                <tr>
-                                    <td>RF-MED-16</td>
-                                    <td>Asignar Consultorio</td>
-                                </tr>
-
-                                </tbody>
-
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Información -->
-                <div class="col-lg-4">
-                    <div class="card shadow-sm border-0 bg-primary text-white h-100">
-                        <div class="card-body">
-
-                            <h4>Sistema Hospitalario</h4>
-
-                            <p>
-                                Este módulo administra la información de médicos,
-                                especialidades, horarios y consultorios.
-                            </p>
-
-                            <hr>
-
-                            <h6>Módulos disponibles</h6>
-
-                            <ul>
-                                <li>Médicos</li>
-                                <li>Especialidades</li>
-                                <li>Horarios</li>
-                                <li>Consultorios</li>
-                            </ul>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Footer -->
-            <div th:replace="layout/footer :: footer"></div>
-
-        </div>
-    </div>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/head :: head('Inicio')}"></head>
+<body data-page="inicio" th:attr="data-can-manage=${puedeProgramar},data-is-admin=${esAdministrador},data-role=${currentRole}">
+<a class="visually-hidden-focusable position-absolute p-3 bg-white" href="#contenido-principal">Saltar al contenido</a>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="app-shell">
+    <aside th:replace="~{layout/sidebar :: sidebar}"></aside>
+    <main class="app-main" id="contenido-principal" tabindex="-1">
+<div class="page-heading"><div><h1>Panel de atención</h1><p>Revisa la programación de hoy y mantén los horarios al día.</p></div><a class="btn btn-primary" th:href="@{/horarios/agenda}"><i class="bi bi-calendar3" aria-hidden="true"></i>Ver agenda semanal</a></div><div id="mensaje" aria-live="polite"></div>
+<section class="dashboard-intro" aria-labelledby="inicio-proposito"><h2 id="inicio-proposito">Una agenda clara, una atención mejor.</h2><p>El horario habitual se repite cada semana durante su vigencia. Las ausencias ajustan la atención en las fechas que correspondan.</p></section>
+<section class="content-card mb-4" aria-label="Resumen de la programación"><div id="resumen-inicio" aria-live="polite"><div class="loading-cell">Cargando resumen de la programación…</div></div></section>
+<div class="dashboard-layout">
+    <section class="card content-card" aria-labelledby="titulo-hoy"><div class="card-header d-flex justify-content-between align-items-center gap-3"><h2 class="mb-0" id="titulo-hoy">Atención de hoy</h2><a class="small" th:href="@{/horarios/agenda}">Ver semana</a></div><div class="card-body" id="agenda-hoy" aria-live="polite"><div class="loading-cell">Cargando atención de hoy…</div></div></section>
+    <section class="card content-card" aria-labelledby="accesos-titulo"><div class="card-header"><h2 class="mb-0" id="accesos-titulo">Accesos directos</h2></div><div class="card-body"><ul class="quick-links">
+        <li sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><a th:href="@{/horarios/registrar}"><i class="bi bi-calendar-plus" aria-hidden="true"></i><span><strong>Configurar horario</strong><small>Define una franja y su vigencia.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a></li>
+        <li><a th:href="@{/medicos}"><i class="bi bi-person-badge" aria-hidden="true"></i><span><strong>Directorio médico</strong><small>Consulta los profesionales registrados.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a></li>
+        <li sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><a th:href="@{/horarios/ausencias}"><i class="bi bi-calendar-x" aria-hidden="true"></i><span><strong>Registrar ausencia</strong><small>Vacaciones, permisos y cambios por fecha.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a></li>
+        <li sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><a th:href="@{/consultorios}"><i class="bi bi-door-open" aria-hidden="true"></i><span><strong>Consultorios</strong><small>Consulta ambientes y asignaciones.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a></li>
+    </ul></div></section>
 </div>
-
+        <div th:replace="~{layout/footer :: footer}"></div>
+    </main>
+</div>
+<button class="sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+<script th:src="@{/js/app.js}"></script>
 </body>
 </html>

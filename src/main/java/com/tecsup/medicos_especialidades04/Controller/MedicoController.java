@@ -21,7 +21,7 @@ public class MedicoController {
 
     @PostMapping
     public ResponseEntity<Medico> guardar(@RequestBody Medico medico) {
-
+        medico.setIdMedico(null);
         return ResponseEntity
                 .status(201)
                 .body(service.guardar(medico));
@@ -50,7 +50,6 @@ public class MedicoController {
             return ResponseEntity.notFound().build();
         }
 
-        existente.setCodigoMedico(medico.getCodigoMedico());
         existente.setTipoDocumento(medico.getTipoDocumento());
         existente.setNumeroDocumento(medico.getNumeroDocumento());
         existente.setNombres(medico.getNombres());
@@ -62,6 +61,7 @@ public class MedicoController {
         existente.setCorreo(medico.getCorreo());
         existente.setFechaIngreso(medico.getFechaIngreso());
         existente.setEstado(medico.getEstado());
+        existente.setEspecialidadIds(medico.getEspecialidadIds());
 
         return ResponseEntity.ok(service.guardar(existente));
     }

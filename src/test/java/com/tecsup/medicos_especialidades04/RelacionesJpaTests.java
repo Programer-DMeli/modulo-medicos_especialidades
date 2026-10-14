@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,11 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Pruebas CRUD de las relaciones JPA (Fase 1).
- * Se ejecutan contra la base de datos MySQL real (medico_especialidad),
- * con rollback automatico al terminar cada prueba. Cada prueba genera sus
- * propios datos unicos para no interferir con los datos reales de la BD.
+ * Se ejecutan en H2 aislado con el perfil test y rollback por caso.
  */
 @DataJpaTest
+@ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class RelacionesJpaTests {
 

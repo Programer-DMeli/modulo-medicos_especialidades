@@ -17,6 +17,14 @@ public class Rol {
     @Column(name = "descripcion", length = 200)
     private String descripcion;
 
+    @Column(name = "estado", nullable = false)
+    private Boolean estado;
+
+    @PrePersist
+    private void inicializarEstado() {
+        if (estado == null) estado = true;
+    }
+
     public Rol() {
     }
 
@@ -26,4 +34,6 @@ public class Rol {
     public void setNombre(String nombre) { this.nombre = nombre; }
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public Boolean getEstado() { return estado; }
+    public void setEstado(Boolean estado) { this.estado = estado; }
 }

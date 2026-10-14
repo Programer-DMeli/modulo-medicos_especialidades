@@ -1,80 +1,14 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow" th:fragment="navbar">
-
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><body>
+<header class="navbar app-header" th:fragment="navbar">
     <div class="container-fluid">
-
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            <i class="bi bi-hospital"></i>
-            Sistema Médico
-        </a>
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#menuNavbar">
-
-            <span class="navbar-toggler-icon"></span>
-
-        </button>
-        <div class="collapse navbar-collapse" id="menuNavbar">
-
-            <ul class="navbar-nav ms-auto">
-
-                <li class="nav-item" sec:authorize="isAnonymous()">
-                    <a class="nav-link" th:href="@{/login}">
-                        <i class="bi bi-box-arrow-in-right"></i>
-                        Iniciar sesión
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link active" th:href="@{/}">
-                        <i class="bi bi-house-door-fill"></i>
-                        Inicio
-                    </a>
-                </li>
-
-                <li class="nav-item" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')">
-                    <a class="nav-link" th:href="@{/medicos}">
-                        Médicos
-                    </a>
-                </li>
-
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/especialidades}">
-                        Especialidades
-                    </a>
-                </li>
-
-                <li class="nav-item" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-                    <a class="nav-link" th:href="@{/horarios}">
-                        Horarios
-                    </a>
-                </li>
-
-                <li class="nav-item" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')">
-                    <a class="nav-link" th:href="@{/consultorios}">
-                        Consultorios
-                    </a>
-                </li>
-
-                <li class="nav-item ms-lg-2" sec:authorize="isAuthenticated()">
-                    <form th:action="@{/logout}" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-outline-light btn-sm mt-1">
-                            <i class="bi bi-box-arrow-right"></i>
-                            Cerrar sesión
-                        </button>
-                    </form>
-                </li>
-
-            </ul>
-
+        <button class="btn btn-outline-secondary icon-button menu-toggle" type="button" data-toggle-sidebar aria-label="Abrir menú de navegación" aria-controls="menu-lateral" aria-expanded="false"><i class="bi bi-list" aria-hidden="true"></i></button>
+        <a class="navbar-brand" th:href="@{/}"><span class="brand-mark"><i class="bi bi-hospital" aria-hidden="true"></i></span><span>Sistema Médico<small class="brand-subtitle">Médicos y especialidades</small></span></a>
+        <div class="header-user" sec:authorize="isAuthenticated()">
+            <span class="user-avatar" aria-hidden="true"><i class="bi bi-person"></i></span>
+            <div class="user-details"><strong th:text="${currentUser}">Usuario</strong><small th:text="${currentRole}">Rol</small></div>
+            <form th:action="@{/logout}" method="post" class="m-0"><button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Salir</span></button></form>
         </div>
-
     </div>
-
-</nav>
-</body>
-</html>
+</header>
+</body></html>

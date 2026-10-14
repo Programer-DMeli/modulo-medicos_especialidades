@@ -1,20 +1,32 @@
 package com.tecsup.medicos_especialidades04.Service;
 
 import com.tecsup.medicos_especialidades04.Model.Usuario;
+import com.tecsup.medicos_especialidades04.Model.Rol;
+import com.tecsup.medicos_especialidades04.Repository.RolRepository;
+import com.tecsup.medicos_especialidades04.config.SessionRevocation;
 import com.tecsup.medicos_especialidades04.Repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @Service
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private RolRepository rolRepository;
+
+    @Autowired
+    private SessionRevocation sessions;
 
     @Autowired
     private AuditoriaService auditoriaService;
@@ -31,6 +43,7 @@ public class UsuarioService {
     }
 
     public Usuario registrar(Usuario usuario) {
+        validarNombres(usuario);
         if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username es obligatorio");
         }
@@ -40,6 +53,8 @@ public class UsuarioService {
         if (usuarioRepository.existsByUsername(usuario.getUsername().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
         }
+        usuario.setIdUsuario(null);
+        usuario.setRol(resolverRolActivo(usuario.getRol()));
         usuario.setUsername(usuario.getUsername().trim());
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         Usuario saved = usuarioRepository.save(usuario);
@@ -48,12 +63,17 @@ public class UsuarioService {
     }
 
     public Usuario actualizar(Long id, Usuario usuario) {
+        validarNombres(usuario);
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        String usernameAnterior = existente.getUsername();
+        Rol nuevoRol = resolverRolActivo(usuario.getRol());
+        boolean nuevoEstado = usuario.getEstado() == null ? Boolean.TRUE.equals(existente.getEstado()) : usuario.getEstado();
+        protegerUltimoAdministrador(existente, nuevoRol, nuevoEstado);
         existente.setNombres(usuario.getNombres());
         existente.setCorreo(usuario.getCorreo());
-        existente.setEstado(usuario.getEstado());
-        existente.setRol(usuario.getRol());
+        if (usuario.getEstado() != null) existente.setEstado(usuario.getEstado());
+        existente.setRol(nuevoRol);
         if (usuario.getUsername() != null && !usuario.getUsername().isBlank()) {
             String nuevo = usuario.getUsername().trim();
             if (!nuevo.equals(existente.getUsername()) && usuarioRepository.existsByUsername(nuevo)) {
@@ -66,25 +86,66 @@ public class UsuarioService {
         }
         Usuario saved = usuarioRepository.save(existente);
         auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        sessions.usuario(usernameAnterior);
         return saved;
     }
 
     public Usuario cambiarEstado(Long id, Boolean estado) {
+        if (estado == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado es obligatorio");
+        }
         // Backbones para activar/desactivar
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        protegerUltimoAdministrador(existente, existente.getRol(), estado);
         existente.setEstado(estado);
         Usuario saved = usuarioRepository.save(existente);
         auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        sessions.usuario(saved.getUsername());
         return saved;
     }
 
     public Usuario desactivar(Long id) {
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        protegerUltimoAdministrador(existente, existente.getRol(), false);
         existente.setEstado(false);
         Usuario saved = usuarioRepository.save(existente);
         auditoriaService.registrarOperacion("UPDATE", "Usuario", saved.getIdUsuario());
+        sessions.usuario(saved.getUsername());
         return saved;
+    }
+
+    private Rol resolverRolActivo(Rol rol) {
+        if (rol == null || rol.getIdRol() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seleccione un rol activo");
+        }
+        Rol existente = rolRepository.findById(rol.getIdRol())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rol no encontrado"));
+        if (!Boolean.TRUE.equals(existente.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede asignar un rol inactivo");
+        }
+        return existente;
+    }
+
+    private void validarNombres(Usuario usuario) {
+        if (usuario == null || usuario.getNombres() == null || usuario.getNombres().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
+        }
+        usuario.setNombres(usuario.getNombres().trim());
+    }
+
+    private void protegerUltimoAdministrador(Usuario actual, Rol nuevoRol, boolean nuevoEstado) {
+        boolean pierdeAcceso = !nuevoEstado || nuevoRol == null || !"ADMINISTRADOR".equals(nuevoRol.getNombre());
+        if (!pierdeAcceso || !Boolean.TRUE.equals(actual.getEstado()) || actual.getRol() == null
+                || !"ADMINISTRADOR".equals(actual.getRol().getNombre())) return;
+        // Serialize removals of administrator access, including concurrent changes.
+        rolRepository.bloquearAdministrador();
+        long activos = usuarioRepository.findAll().stream().filter(user -> Boolean.TRUE.equals(user.getEstado())
+                && user.getRol() != null && "ADMINISTRADOR".equals(user.getRol().getNombre())
+                && Boolean.TRUE.equals(user.getRol().getEstado())).count();
+        if (activos <= 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Debe conservar al menos un administrador activo");
+        }
     }
 }

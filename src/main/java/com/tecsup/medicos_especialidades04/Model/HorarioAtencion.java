@@ -2,6 +2,7 @@ package com.tecsup.medicos_especialidades04.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 // Pregunta 1 - Relaciones: (Meliton) relaciones @ManyToOne verificadas y completadas
@@ -26,6 +27,14 @@ public class HorarioAtencion {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Consultorio consultorio;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "especialidad_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Especialidades especialidad;
+
+    public Especialidades getEspecialidad() { return especialidad; }
+    public void setEspecialidad(Especialidades especialidad) { this.especialidad = especialidad; }
+
     @Column(name = "dia_semana", nullable = false, length = 20)
     private String diaSemana;
 
@@ -40,6 +49,13 @@ public class HorarioAtencion {
 
     @Column(name = "estado", nullable = false)
     private String estado;
+
+    // Nulo en registros heredados: revisar antes de publicar en la agenda.
+    @Column(name = "vigente_desde")
+    private LocalDate vigenteDesde;
+
+    @Column(name = "vigente_hasta")
+    private LocalDate vigenteHasta;
 
     public HorarioAtencion() {
     }
@@ -107,4 +123,9 @@ public class HorarioAtencion {
     public void setEstado(String estado) {
         this.estado = estado;
     }
+
+    public LocalDate getVigenteDesde() { return vigenteDesde; }
+    public void setVigenteDesde(LocalDate vigenteDesde) { this.vigenteDesde = vigenteDesde; }
+    public LocalDate getVigenteHasta() { return vigenteHasta; }
+    public void setVigenteHasta(LocalDate vigenteHasta) { this.vigenteHasta = vigenteHasta; }
 }

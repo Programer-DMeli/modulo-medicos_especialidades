@@ -6,7 +6,6 @@ import com.tecsup.medicos_especialidades04.Model.EstadoConsultorio;
 import com.tecsup.medicos_especialidades04.Model.HorarioAtencion;
 import com.tecsup.medicos_especialidades04.Repository.ConsultorioRepository;
 import com.tecsup.medicos_especialidades04.Repository.EspecialidadesRepository;
-import com.tecsup.medicos_especialidades04.Repository.HorarioAtencionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,10 +24,12 @@ public class ConsultorioService {
     private EspecialidadesRepository especialidadesRepository;
 
     @Autowired
-    private HorarioAtencionRepository horarioAtencionRepository;
+    private HorarioAtencionService horarioAtencionService;
 
     @Autowired
     private AuditoriaService auditoriaService;
+
+    @Autowired private com.tecsup.medicos_especialidades04.Repository.HorarioAtencionRepository horarios;
 
     public List<Consultorio> listar() {
         return consultorioRepository.findAll();
@@ -42,7 +43,7 @@ public class ConsultorioService {
     public Consultorio registrar(Consultorio consultorio) {
         validarDatos(consultorio);
 
-        String codigoNormalizado = consultorio.getCodigo().trim().toUpperCase();
+        String codigoNormalizado = "TMP" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 17);
 
         if (consultorioRepository.existsByCodigoIgnoreCase(codigoNormalizado)) {
             throw new ResponseStatusException(
@@ -62,44 +63,42 @@ public class ConsultorioService {
 
         asociarEspecialidadExistente(consultorio);
 
-        Consultorio saved = consultorioRepository.save(consultorio);
+        if (consultorio.getEstado() == EstadoConsultorio.OCUPADO) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La ocupación se calcula por horario; selecciona operativo o inactivo");
+        Consultorio saved = consultorioRepository.saveAndFlush(consultorio);
+        String base = "CON-" + String.format("%06d", saved.getId());
+        String codigo = base;
+        int sufijo = 1;
+        while (consultorioRepository.existsByCodigoIgnoreCase(codigo)) codigo = base + "-" + sufijo++;
+        saved.setCodigo(codigo);
         auditoriaService.registrarOperacion("INSERT", "Consultorio", saved.getId());
         return saved;
     }
 
-    @Transactional
     public HorarioAtencion asignarConsultorio(Long consultorioId, Long horarioId) {
-        Consultorio consultorio = consultorioRepository.findById(consultorioId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el consultorio con ID " + consultorioId
-                ));
+        return horarioAtencionService.asignarConsultorio(consultorioId, horarioId);
+    }
 
-        if (consultorio.getEstado() == EstadoConsultorio.INACTIVO) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "No se puede asignar un consultorio inactivo"
-            );
+    @Transactional
+    public Consultorio actualizar(Long id, Consultorio solicitud) {
+        Consultorio existente = consultorioRepository.bloquearPorId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Consultorio no encontrado"));
+        validarDatos(solicitud);
+        Long anterior = existente.getEspecialidad() == null ? null : existente.getEspecialidad().getIdEspecialidad();
+        Long nuevo = solicitud.getEspecialidad() == null ? null : solicitud.getEspecialidad().getIdEspecialidad();
+        if (!java.util.Objects.equals(anterior, nuevo) && horarios.existsByConsultorio_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El consultorio tiene horarios: conserva su especialidad para mantener la coherencia del historial");
         }
-
-        HorarioAtencion horario = horarioAtencionRepository.findById(horarioId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el horario con ID " + horarioId
-                ));
-
-        if (horario.getMedico() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "El horario no tiene un médico asociado"
-            );
+        if (!java.util.Objects.equals(anterior, nuevo)) asociarEspecialidadExistente(solicitud);
+        if (solicitud.getEstado() == null || solicitud.getEstado() == EstadoConsultorio.OCUPADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selecciona operativo o inactivo");
         }
-
-        horario.setConsultorio(consultorio);
-
-        HorarioAtencion saved = horarioAtencionRepository.save(horario);
-        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", saved.getIdHorario());
-        return saved;
+        existente.setNombre(solicitud.getNombre().trim());
+        existente.setPiso(solicitud.getPiso());
+        existente.setArea(solicitud.getArea().trim());
+        existente.setEstado(solicitud.getEstado());
+        if (!java.util.Objects.equals(anterior, nuevo)) existente.setEspecialidad(solicitud.getEspecialidad());
+        auditoriaService.registrarOperacion("UPDATE", "Consultorio", id);
+        return consultorioRepository.save(existente);
     }
 
     private void asociarEspecialidadExistente(Consultorio consultorio) {
@@ -123,6 +122,7 @@ public class ConsultorioService {
                 ));
 
         consultorio.setEspecialidad(especialidad);
+        if (!Boolean.TRUE.equals(especialidad.getEstado())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selecciona una especialidad activa");
     }
 
     private void validarDatos(Consultorio consultorio) {
@@ -133,14 +133,7 @@ public class ConsultorioService {
             );
         }
 
-        if (consultorio.getCodigo() == null || consultorio.getCodigo().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "El código del consultorio es obligatorio"
-            );
-        }
-
-        if (consultorio.getNombre() == null || consultorio.getNombre().isBlank()) {
+        if (consultorio.getNombre() == null || consultorio.getNombre().isBlank() || consultorio.getNombre().trim().length() > 100) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "El nombre del consultorio es obligatorio"
@@ -154,7 +147,7 @@ public class ConsultorioService {
             );
         }
 
-        if (consultorio.getArea() == null || consultorio.getArea().isBlank()) {
+        if (consultorio.getArea() == null || consultorio.getArea().isBlank() || consultorio.getArea().trim().length() > 100) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "El área del consultorio es obligatoria"
@@ -170,6 +163,7 @@ public class ConsultorioService {
                         "No existe el consultorio con ID " + id
                 ));
 
+        if (horarios.existsByConsultorio_Id(id)) throw new ResponseStatusException(HttpStatus.CONFLICT, "El consultorio tiene horarios registrados. Inactívalo para conservar su historial");
         consultorioRepository.delete(consultorio);
         auditoriaService.registrarOperacion("DELETE", "Consultorio", id);
     }

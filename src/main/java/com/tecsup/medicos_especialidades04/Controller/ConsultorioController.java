@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/consultorios")
-@CrossOrigin(origins = "*")
+
 public class ConsultorioController {
 
     @Autowired
@@ -46,6 +46,11 @@ public class ConsultorioController {
         return ResponseEntity.ok(
                 service.asignarConsultorio(consultorioId, horarioId)
         );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Consultorio> actualizar(@PathVariable Long id, @RequestBody Consultorio consultorio) {
+        return ResponseEntity.ok(service.actualizar(id, consultorio));
     }
 
     @DeleteMapping("/{id}")

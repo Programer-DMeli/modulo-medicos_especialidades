@@ -1,16 +1,18 @@
 package com.tecsup.medicos_especialidades04.Controller;
 
 import com.tecsup.medicos_especialidades04.Model.HorarioAtencion;
+import com.tecsup.medicos_especialidades04.Model.AusenciaMedico;
 import com.tecsup.medicos_especialidades04.Service.HorarioAtencionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/horarios")
-@CrossOrigin(origins = "*")
 public class HorarioAtencionController {
 
     @Autowired
@@ -20,6 +22,31 @@ public class HorarioAtencionController {
     @GetMapping
     public List<HorarioAtencion> listar() {
         return service.listar();
+    }
+
+    @GetMapping("/agenda")
+    public List<HorarioAtencionService.BloqueAgenda> agenda(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) Long medicoId,
+            @RequestParam(required = false) Long consultorioId) {
+        return service.agenda(desde, hasta, medicoId, consultorioId);
+    }
+
+    @GetMapping("/ausencias")
+    public List<AusenciaMedico> listarAusencias() {
+        return service.listarAusencias();
+    }
+
+    @PostMapping("/ausencias")
+    public ResponseEntity<AusenciaMedico> registrarAusencia(@RequestBody AusenciaMedico ausencia) {
+        return ResponseEntity.status(201).body(service.guardarAusencia(ausencia));
+    }
+
+    @DeleteMapping("/ausencias/{id}")
+    public ResponseEntity<Void> eliminarAusencia(@PathVariable Long id) {
+        service.eliminarAusencia(id);
+        return ResponseEntity.noContent().build();
     }
     // OBTENER HORARIO POR ID
     // GET: /api/horarios/{id}

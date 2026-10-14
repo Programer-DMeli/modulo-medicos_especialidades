@@ -11,11 +11,11 @@ import java.util.List;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Especialidades {
     @OneToMany(mappedBy = "especialidad", fetch = FetchType.LAZY)
-    @JsonIgnoreProperties("especialidad")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Consultorio> consultorios = new ArrayList<>();
 
     @OneToMany(mappedBy = "especialidad", fetch = FetchType.LAZY)
-    @JsonIgnoreProperties("especialidad")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<MedicoEspecialidad> medicoEspecialidades = new ArrayList<>();
 
 

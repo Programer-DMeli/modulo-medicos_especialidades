@@ -10,7 +10,7 @@ import java.util.List;
 // Registro automatico en AuditoriaService, invocado desde cada servicio (INSERT/UPDATE/DELETE)
 @RestController
 @RequestMapping("/api/auditoria")
-@CrossOrigin(origins = "*")
+
 public class AuditoriaController {
 
     @Autowired

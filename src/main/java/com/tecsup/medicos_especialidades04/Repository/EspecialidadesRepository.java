@@ -12,4 +12,6 @@ public interface EspecialidadesRepository extends JpaRepository<Especialidades, 
     Optional<Especialidades> findByNombre(String nombre);
 
     Optional<Especialidades> findByCodigo(String codigo);
+
+    Optional<Especialidades> findByNombreIgnoreCase(String nombre);
 }

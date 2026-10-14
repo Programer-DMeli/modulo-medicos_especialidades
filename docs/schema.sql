@@ -3,9 +3,8 @@
 -- Script de estructura (MySQL 8) generado a partir de las entidades JPA
 -- del proyecto medicos_especialidades04.
 --
--- Nota: la aplicacion tambien crea/actualiza las tablas automaticamente con
--- spring.jpa.hibernate.ddl-auto=update; este script queda como referencia
--- y para restaurar la BD desde cero.
+-- Para una base nueva. La aplicacion valida el esquema; no lo altera al arrancar.
+-- Para una base existente aplicar docs/migrations/001_agenda_roles.sql.
 -- Los 3 roles por defecto (ADMINISTRADOR, MEDICO, RECEPCIONISTA) los crea
 -- DataInitializer al arrancar la aplicacion.
 -- ============================================================================
@@ -21,6 +20,7 @@ CREATE TABLE roles (
     id_rol      BIGINT       NOT NULL AUTO_INCREMENT,
     nombre      VARCHAR(50)  NOT NULL,
     descripcion VARCHAR(200) NULL,
+    estado      BOOLEAN     NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id_rol),
     CONSTRAINT uk_roles_nombre UNIQUE (nombre)
 ) ENGINE = InnoDB;
@@ -61,6 +61,7 @@ CREATE TABLE medico (
     estado           VARCHAR(20)  NOT NULL, -- ACTIVO | SUSPENDIDO | VACACIONES
     PRIMARY KEY (id_medico),
     CONSTRAINT uk_medico_codigo    UNIQUE (codigo_medico),
+    CONSTRAINT uk_medico_cmp      UNIQUE (cmp),
     CONSTRAINT uk_medico_documento UNIQUE (numero_documento)
 ) ENGINE = InnoDB;
 
@@ -108,9 +109,28 @@ CREATE TABLE horario_atencion (
     hora_fin       TIME        NOT NULL,
     duracion_cita  INT         NOT NULL,
     estado         VARCHAR(20) NOT NULL,
+    vigente_desde  DATE        NULL, -- NULL preserva el dato legado sin fecha conocida
+    vigente_hasta  DATE        NULL,
+    especialidad_id BIGINT     NULL, -- nullable para preservar horarios heredados
     PRIMARY KEY (id_horario),
     CONSTRAINT fk_horario_medico      FOREIGN KEY (medico_id)      REFERENCES medico (id_medico),
-    CONSTRAINT fk_horario_consultorio FOREIGN KEY (consultorio_id) REFERENCES consultorios (id)
+    CONSTRAINT fk_horario_consultorio FOREIGN KEY (consultorio_id) REFERENCES consultorios (id),
+    CONSTRAINT fk_horario_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidad (id_especialidad)
+) ENGINE = InnoDB;
+
+-- ----------------------------------------------------------------------------
+-- ausencia_medico (excepciones concretas a la plantilla semanal)
+-- ----------------------------------------------------------------------------
+CREATE TABLE ausencia_medico (
+    id_ausencia BIGINT       NOT NULL AUTO_INCREMENT,
+    medico_id   BIGINT       NOT NULL,
+    inicio      DATETIME(6)  NOT NULL,
+    fin         DATETIME(6)  NOT NULL,
+    motivo      VARCHAR(200) NOT NULL,
+    estado      VARCHAR(20)  NOT NULL,
+    PRIMARY KEY (id_ausencia),
+    CONSTRAINT fk_ausencia_medico FOREIGN KEY (medico_id) REFERENCES medico (id_medico),
+    INDEX ix_ausencia_medico_intervalo (medico_id, inicio, fin)
 ) ENGINE = InnoDB;
 
 -- ----------------------------------------------------------------------------
@@ -122,6 +142,7 @@ CREATE TABLE medico_especialidad (
     id_especialidad        BIGINT       NOT NULL,
     subespecialidad        VARCHAR(100) NULL,
     PRIMARY KEY (id_medico_especialidad),
+    CONSTRAINT uk_medico_especialidad UNIQUE (id_medico, id_especialidad),
     CONSTRAINT fk_me_medico      FOREIGN KEY (id_medico)      REFERENCES medico (id_medico),
     CONSTRAINT fk_me_especialidad FOREIGN KEY (id_especialidad) REFERENCES especialidad (id_especialidad)
 ) ENGINE = InnoDB;

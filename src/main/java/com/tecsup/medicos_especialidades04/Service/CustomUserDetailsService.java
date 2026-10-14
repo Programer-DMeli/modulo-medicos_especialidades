@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 
@@ -19,12 +20,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     private UsuarioRepository usuarioRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public User loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario u = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        if (Boolean.FALSE.equals(u.getEstado())) {
+        if (!Boolean.TRUE.equals(u.getEstado())) {
             throw new UsernameNotFoundException("Usuario desactivado: " + username);
+        }
+        if (u.getRol() == null || !Boolean.TRUE.equals(u.getRol().getEstado())) {
+            throw new UsernameNotFoundException("Rol inactivo o no asignado");
         }
         java.util.List<SimpleGrantedAuthority> authorities = u.getRol() == null
                 ? Collections.emptyList()

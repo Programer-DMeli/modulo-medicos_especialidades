@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/head :: head('Agenda semanal')}"></head>
+<body data-page="horarios-agenda" th:attr="data-can-manage=${puedeProgramar},data-is-admin=${esAdministrador},data-role=${currentRole}">
+<a class="visually-hidden-focusable position-absolute p-3 bg-white" href="#contenido-principal">Saltar al contenido</a>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="app-shell">
+    <aside th:replace="~{layout/sidebar :: sidebar}"></aside>
+    <main class="app-main" id="contenido-principal" tabindex="-1">
+<div class="page-heading"><div><h1>Agenda semanal</h1><p>Atención por fecha, calculada a partir del horario habitual, su vigencia y las ausencias.</p></div><a class="btn btn-primary" th:href="@{/horarios/registrar}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo horario</a></div><nav class="page-tabs" aria-label="Vistas de horarios"><a th:href="@{/horarios}"><i class="bi bi-calendar-week" aria-hidden="true"></i>Horario habitual</a><a th:href="@{/horarios/agenda}" class="active" aria-current="page"><i class="bi bi-calendar3" aria-hidden="true"></i>Agenda semanal</a><a th:href="@{/horarios/ausencias}"><i class="bi bi-calendar-x" aria-hidden="true"></i>Ausencias</a></nav><div id="mensaje" aria-live="polite"></div>
+<div class="agenda-toolbar" role="search" aria-label="Filtrar agenda">
+    <div><label class="form-label" for="agenda-desde">Semana de referencia</label><input class="form-control" type="date" id="agenda-desde"></div>
+    <div><label class="form-label" for="agenda-medico">Médico</label><select class="form-select" id="agenda-medico"><option value="">Todos los médicos</option></select></div>
+    <div><label class="form-label" for="agenda-consultorio">Consultorio</label><select class="form-select" id="agenda-consultorio"><option value="">Todos los consultorios</option></select></div>
+</div>
+<div class="agenda-controls">
+    <div class="agenda-nav"><button class="btn btn-outline-secondary icon-button" id="semana-anterior" type="button" aria-label="Semana anterior"><i class="bi bi-chevron-left" aria-hidden="true"></i></button><span id="rango-agenda" aria-live="polite">Cargando semana…</span><button class="btn btn-outline-secondary icon-button" id="semana-siguiente" type="button" aria-label="Semana siguiente"><i class="bi bi-chevron-right" aria-hidden="true"></i></button><button class="btn btn-outline-secondary" id="semana-hoy" type="button">Hoy</button></div>
+    <div class="view-switch" role="group" aria-label="Vista de agenda"><button class="btn active" id="vista-semana" type="button" aria-pressed="true"><i class="bi bi-calendar3" aria-hidden="true"></i>Semana</button><button class="btn" id="vista-lista" type="button" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i>Lista</button></div>
+</div>
+<section id="agenda-semanal" aria-label="Agenda por días de la semana" aria-live="polite"><div class="loading-cell">Cargando atención semanal…</div></section>
+<section id="agenda-lista" aria-label="Agenda en lista" aria-live="polite" hidden></section>
+<div class="agenda-legend" aria-label="Leyenda de la agenda"><span><i class="legend-dot" aria-hidden="true"></i>Atención</span><span><i class="legend-dot pending" aria-hidden="true"></i>Pendiente de consultorio</span><span><i class="legend-dot absence" aria-hidden="true"></i>Ausencia</span></div>
+        <div th:replace="~{layout/footer :: footer}"></div>
+    </main>
+</div>
+<button class="sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
