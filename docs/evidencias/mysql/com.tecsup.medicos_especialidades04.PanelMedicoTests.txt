@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.tecsup.medicos_especialidades04.PanelMedicoTests
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.514 s -- in com.tecsup.medicos_especialidades04.PanelMedicoTests

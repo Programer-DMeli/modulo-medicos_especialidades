@@ -1,0 +1,36 @@
+Fecha: 2026-10-21 07:30:29
+Base aislada: medicos_integracion_b23b46b0
+Esquema validado sin alteraciones automáticas.
+Cada prueba transaccional revierte sus registros. Las filas EVIDENCIA_BD se consultan por JDBC antes del rollback.
+
+base_pruebas	version_servidor
+medicos_integracion_b23b46b0	10.4.32-MariaDB
+TABLE_NAME	COLUMN_NAME	REFERENCED_TABLE_NAME	REFERENCED_COLUMN_NAME
+ausencia_medico	medico_id	medico	id_medico
+consultorios	especialidad_id	especialidad	id_especialidad
+horario_atencion	consultorio_id	consultorios	id
+horario_atencion	especialidad_id	especialidad	id_especialidad
+horario_atencion	medico_id	medico	id_medico
+medico_especialidad	id_especialidad	especialidad	id_especialidad
+medico_especialidad	id_medico	medico	id_medico
+usuarios	medico_id	medico	id_medico
+usuarios	id_rol	roles	id_rol
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.95 s -- in com.tecsup.medicos_especialidades04.AuditoriaCrudTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.562 s -- in com.tecsup.medicos_especialidades04.CuentasMedicosTests
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.234 s -- in com.tecsup.medicos_especialidades04.HorariosReglasTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.tecsup.medicos_especialidades04.MedicosEspecialidades04ApplicationTests
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=INSERT, entidad=Usuario, registro_id=7}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=UPDATE, entidad=Usuario, registro_id=7}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=UPDATE, entidad=Usuario, registro_id=7}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=UPDATE, entidad=Usuario, registro_id=7}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=UPDATE, entidad=Usuario, registro_id=7}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=INSERT, entidad=Consultorio, registro_id=14}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=UPDATE, entidad=Consultorio, registro_id=14}
+EVIDENCIA_BD {usuario=entrega.admin, fecha_hora=2026-10-21T07:30:21, operacion=DELETE, entidad=Consultorio, registro_id=14}
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.770 s -- in com.tecsup.medicos_especialidades04.ModulosEntregaTests
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.514 s -- in com.tecsup.medicos_especialidades04.PanelMedicoTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.218 s -- in com.tecsup.medicos_especialidades04.RelacionesJpaTests
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.247 s -- in com.tecsup.medicos_especialidades04.SeguridadUsuariosRolesTests
+[INFO] Tests run: 58, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

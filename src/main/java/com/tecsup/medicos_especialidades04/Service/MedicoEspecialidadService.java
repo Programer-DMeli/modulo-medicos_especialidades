@@ -15,6 +15,7 @@ import java.util.List;
 @Service
 @Transactional
 public class MedicoEspecialidadService {
+    @Autowired private AlcanceMedicoService alcance;
 
     @Autowired
     private MedicoEspecialidadRepository repo;
@@ -31,7 +32,7 @@ public class MedicoEspecialidadService {
     @Autowired private com.tecsup.medicos_especialidades04.Repository.HorarioAtencionRepository horarios;
 
     public List<MedicoEspecialidad> listar() {
-        return repo.findAll();
+        return alcance.esMedico() ? alcance.asignaciones() : repo.findAll();
     }
 
     public MedicoEspecialidad guardar(MedicoEspecialidad medicoEspecialidad) {
@@ -70,6 +71,8 @@ public class MedicoEspecialidadService {
     }
 
     public MedicoEspecialidad obtener(Long id) {
+        if (alcance.esMedico()) return alcance.asignaciones().stream().filter(item -> item.getIdMedicoEspecialidad().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no disponible para tu cuenta"));
         return repo.findById(id).orElse(null);
     }
 

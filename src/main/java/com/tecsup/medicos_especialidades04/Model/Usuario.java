@@ -33,6 +33,16 @@ public class Usuario {
     @JoinColumn(name = "id_rol")
     private Rol rol;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medico_id", unique = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Medico medico;
+
+    public Medico getMedico() { return medico; }
+    public void setMedico(Medico medico) { this.medico = medico; }
+    public Long getMedicoId() { return medico == null ? null : medico.getIdMedico(); }
+    public String getMedicoCodigo() { return medico == null ? null : medico.getCodigoMedico(); }
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 

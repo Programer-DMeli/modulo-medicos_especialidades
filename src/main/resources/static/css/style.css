@@ -199,3 +199,5 @@ small,.small {font-size:.8125rem}
  .login-shell{grid-template-columns:1fr;max-width:440px}.login-intro{padding:25px 28px}.login-intro h1{font-size:1.5rem;margin:24px 0 12px}.login-intro>small{display:none}.login-form{padding:30px 28px}
 }
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+.credentials-dialog {width:min(540px,calc(100% - 32px));padding:28px;border:0;border-radius:16px;box-shadow:0 20px 60px #16243a33}
+.credentials-dialog::backdrop {background:#16243a80}

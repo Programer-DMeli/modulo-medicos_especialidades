@@ -12,6 +12,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/medicos")
 public class MedicoController {
+    public record AltaMedico(@com.fasterxml.jackson.annotation.JsonUnwrapped Medico medico,
+            com.tecsup.medicos_especialidades04.Model.CredencialesMedico credencialesAcceso) {}
     @Autowired
     private MedicoService service;
 
@@ -21,11 +23,12 @@ public class MedicoController {
     }
 
     @PostMapping
-    public ResponseEntity<Medico> guardar(@RequestBody Medico medico) {
+    public ResponseEntity<AltaMedico> guardar(@RequestBody Medico medico) {
         medico.setIdMedico(null);
+        Medico saved = service.guardar(medico);
         return ResponseEntity
                 .status(201)
-                .body(service.guardar(medico));
+                .body(new AltaMedico(saved, saved.getCredencialesAcceso()));
     }
 
     @GetMapping("/{id}")

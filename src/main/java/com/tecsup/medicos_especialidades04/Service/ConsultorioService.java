@@ -16,6 +16,7 @@ import java.util.List;
 
 @Service
 public class ConsultorioService {
+    @Autowired private AlcanceMedicoService alcance;
 
     @Autowired
     private ConsultorioRepository consultorioRepository;
@@ -32,10 +33,12 @@ public class ConsultorioService {
     @Autowired private com.tecsup.medicos_especialidades04.Repository.HorarioAtencionRepository horarios;
 
     public List<Consultorio> listar() {
-        return consultorioRepository.findAll();
+        return alcance.esMedico() ? alcance.consultorios() : consultorioRepository.findAll();
     }
 
     public Consultorio obtener(Long id) {
+        if (alcance.esMedico()) return alcance.consultorios().stream().filter(item -> item.getId().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no disponible para tu cuenta"));
         return consultorioRepository.findById(id).orElse(null);
     }
 

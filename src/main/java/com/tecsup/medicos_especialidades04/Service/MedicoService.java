@@ -21,6 +21,7 @@ import com.tecsup.medicos_especialidades04.Repository.HorarioAtencionRepository;
 @Service
 @Transactional
 public class MedicoService {
+    @Autowired private AlcanceMedicoService alcance;
 
     @Autowired
     private MedicoRepository repo;
@@ -36,9 +37,10 @@ public class MedicoService {
 
     @Autowired private EspecialidadesRepository especialidadesRepo;
     @Autowired private HorarioAtencionRepository horariosRepo;
+    @Autowired private CuentaMedicoService cuentasMedicos;
 
     public List<Medico> listar() {
-        return repo.findAll();
+        return alcance.esMedico() ? alcance.medicos() : repo.findAll();
     }
 
     public Medico cambiarEstado(Long id, EstadoMedico estado) {
@@ -113,6 +115,7 @@ public class MedicoService {
             "Medico",
             saved.getIdMedico()
         );
+        saved.setCredencialesAcceso(cuentasMedicos.asegurarCuenta(saved));
         return saved;
     }
 
@@ -156,8 +159,9 @@ public class MedicoService {
      * Al editar, se ignora al propio medico que se esta modificando.
      */
     private void validarUnicidad(Medico medico) {
-        repo.findByCmp(medico.getCmp()).filter(m -> !Objects.equals(m.getIdMedico(), medico.getIdMedico()))
-                .ifPresent(m -> { throw new ResponseStatusException(HttpStatus.CONFLICT, "El CMP ya pertenece a otro médico"); });
+        boolean cmpEnUso = medico.getIdMedico() == null ? repo.existsByCmp(medico.getCmp())
+                : repo.existsByCmpAndIdMedicoNot(medico.getCmp(), medico.getIdMedico());
+        if (cmpEnUso) throw new ResponseStatusException(HttpStatus.CONFLICT, "El CMP ya pertenece a otro médico");
         if (medico.getNumeroDocumento() != null && !medico.getNumeroDocumento().isBlank()) {
             String documento = medico.getNumeroDocumento().trim();
             repo.findByNumeroDocumento(documento)
@@ -183,6 +187,8 @@ public class MedicoService {
     }
 
     public Medico obtener(Long id) {
+        if (alcance.esMedico()) return alcance.medicos().stream().filter(item -> item.getIdMedico().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no disponible para tu cuenta"));
         return repo.findById(id).orElse(null);
     }
 
@@ -193,8 +199,10 @@ public class MedicoService {
         }
         for (MedicoEspecialidad relacion : medicoEspecialidadRepo.findByMedico_IdMedico(id)) {
             medicoEspecialidadRepo.delete(relacion);
+            medico.getMedicoEspecialidades().remove(relacion);
             auditoriaService.registrarOperacion("DELETE", "MedicoEspecialidad", relacion.getIdMedicoEspecialidad());
         }
+        cuentasMedicos.desvincular(medico);
         repo.deleteById(id);
         auditoriaService.registrarOperacion("DELETE", "Medico", id);
     }

@@ -26,10 +26,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@DataJpaTest(showSql = false, properties = {"spring.datasource.url=jdbc:h2:mem:horarios_pruebas;MODE=MySQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000"})
+@DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
-@Import({HorarioAtencionService.class, ConsultorioService.class, AuditoriaService.class})
+@Import({AlcanceMedicoService.class, HorarioAtencionService.class, ConsultorioService.class, AuditoriaService.class})
 class HorariosReglasTests {
     @Autowired private TestEntityManager em;
     @Autowired private HorarioAtencionService service;
@@ -197,7 +197,7 @@ class HorariosReglasTests {
         estado(400, () -> service.guardar(horario(activo, c, 8, 12)));
     }
 
-    @Test void nuevaVersionConservaBloqueYaIniciado() {
+    @Test void editarBloqueYaIniciadoActualizaElMismoRegistro() {
         Medico m = medico();
         HorarioAtencion original = horario(m, consultorio(), 8, 12);
         original.setVigenteDesde(hoy());
@@ -205,19 +205,22 @@ class HorariosReglasTests {
         HorarioAtencion cambio = horario(m, original.getConsultorio(), 14, 18);
         cambio.setVigenteDesde(hoy().plusDays(1));
         HorarioAtencion version = service.actualizar(guardado.getIdHorario(), cambio);
-        assertNotEquals(guardado.getIdHorario(), version.getIdHorario());
-        assertEquals(hoy(), horarios.findById(guardado.getIdHorario()).orElseThrow().getVigenteHasta());
-        assertEquals(LocalTime.of(8, 0), guardado.getHoraInicio());
+        assertEquals(guardado.getIdHorario(), version.getIdHorario());
+        assertEquals(cambio.getVigenteHasta(), horarios.findById(guardado.getIdHorario()).orElseThrow().getVigenteHasta());
+        assertEquals(LocalTime.of(14, 0), guardado.getHoraInicio());
         assertEquals(LocalTime.of(14, 0), version.getHoraInicio());
     }
 
-    @Test void rechazaEditarPasadoYFechaAnteriorAHoy() {
+    @Test void renuevaPasadoSinAlterarHistorialYRechazaFechaAnteriorAHoy() {
         Medico m = medico();
         HorarioAtencion pasado = horario(m, null, 8, 12);
         pasado.setVigenteDesde(hoy().minusWeeks(2));
         pasado.setVigenteHasta(hoy().minusDays(1));
         em.persistAndFlush(pasado);
-        estado(409, () -> service.actualizar(pasado.getIdHorario(), horario(m, null, 10, 12)));
+        HorarioAtencion renovado = service.actualizar(pasado.getIdHorario(), horario(m, null, 10, 12));
+        assertNotEquals(pasado.getIdHorario(), renovado.getIdHorario());
+        assertEquals(hoy().minusDays(1), pasado.getVigenteHasta());
+        assertEquals(LocalTime.of(8, 0), pasado.getHoraInicio());
         HorarioAtencion retroactivo = horario(m, null, 8, 12);
         retroactivo.setVigenteDesde(hoy().minusDays(1));
         estado(400, () -> service.guardar(retroactivo));
@@ -231,6 +234,21 @@ class HorariosReglasTests {
         assertTrue(service.agenda(lunes(), lunes(), m.getIdMedico(), null).isEmpty());
         service.actualizar(legado.getIdHorario(), horario(m, null, 8, 12));
         assertEquals("PENDIENTE", service.agenda(lunes(), lunes(), m.getIdMedico(), null).getFirst().tipo());
+    }
+
+    @Test void eliminarHistorialBorraSoloElPeriodoVencidoYAudita() {
+        Medico m = medico();
+        HorarioAtencion pasado = horario(m, null, 8, 12);
+        pasado.setVigenteDesde(hoy().minusWeeks(2));
+        pasado.setVigenteHasta(hoy().minusDays(1));
+        em.persistAndFlush(pasado);
+        HorarioAtencion vigente = service.guardar(horario(m, null, 8, 12));
+        service.eliminar(pasado.getIdHorario());
+        em.flush();
+        assertFalse(horarios.existsById(pasado.getIdHorario()));
+        assertTrue(horarios.existsById(vigente.getIdHorario()));
+        assertTrue(auditorias.findAll().stream().anyMatch(a -> "DELETE".equals(a.getOperacion())
+                && "HorarioAtencion".equals(a.getEntidad()) && pasado.getIdHorario().equals(a.getRegistroId())));
     }
 
     @Test void eliminarFuturoBorraYAuditaPeroIniciadoSoloCierra() {

@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{layout/head :: head('Horario habitual')}"></head>
+<head th:replace="~{layout/head :: head(${esMedico} ? 'Mi agenda' : 'Horario habitual')}"></head>
 <body data-page="horarios-listar" th:attr="data-can-manage=${puedeProgramar},data-is-admin=${esAdministrador},data-role=${currentRole}">
 <a class="visually-hidden-focusable position-absolute p-3 bg-white" href="#contenido-principal">Saltar al contenido</a>
 <div th:replace="~{layout/navbar :: navbar}"></div>
 <div class="app-shell">
     <aside th:replace="~{layout/sidebar :: sidebar}"></aside>
     <main class="app-main" id="contenido-principal" tabindex="-1">
-<div class="page-heading"><div><h1>Horario habitual</h1><p>Franjas de atención que se repiten cada semana dentro de su vigencia.</p></div><a class="btn btn-primary" th:href="@{/horarios/registrar}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo horario</a></div><nav class="page-tabs" aria-label="Vistas de horarios"><a th:href="@{/horarios}" class="active" aria-current="page"><i class="bi bi-calendar-week" aria-hidden="true"></i>Horario habitual</a><a th:href="@{/horarios/agenda}"><i class="bi bi-calendar3" aria-hidden="true"></i>Agenda semanal</a><a th:href="@{/horarios/ausencias}"><i class="bi bi-calendar-x" aria-hidden="true"></i>Ausencias</a></nav><div id="mensaje" aria-live="polite"></div>
+<div class="page-heading"><div><h1 th:text="${esMedico} ? 'Mi agenda' : 'Horario habitual'">Horario habitual</h1><p>Franjas de atención que se repiten cada semana dentro de su vigencia.</p></div><a class="btn btn-primary" th:href="@{/horarios/registrar}" sec:authorize="hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')"><i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo horario</a></div><nav class="page-tabs" aria-label="Vistas de horarios"><a th:href="@{/horarios}" class="active" aria-current="page"><i class="bi bi-calendar-week" aria-hidden="true"></i>Horario habitual</a><a th:href="@{/horarios/agenda}"><i class="bi bi-calendar3" aria-hidden="true"></i>Agenda semanal</a><a th:href="@{/horarios/ausencias}"><i class="bi bi-calendar-x" aria-hidden="true"></i>Ausencias</a></nav><div id="mensaje" aria-live="polite"></div>
 <div class="filter-bar" role="search" aria-label="Filtrar horarios">
     <div class="search-field"><label class="form-label" for="buscar-horarios">Buscar horario</label><input class="form-control" type="search" id="buscar-horarios" placeholder="Médico o consultorio"></div>
-    <div><label class="form-label" for="filtro-medico">Médico</label><select class="form-select" id="filtro-medico"><option value="">Todos los médicos</option></select></div>
+    <div><label class="form-label" for="filtro-medico">Médico</label><select class="form-select" id="filtro-medico"><option value="" th:text="${esMedico} ? 'Mi programación' : 'Todos los médicos'">Todos los médicos</option></select></div>
     <div><label class="form-label" for="filtro-dia">Día</label><select class="form-select" id="filtro-dia"><option value="">Todos los días</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option></select></div>
     <div><label class="form-label" for="filtro-estado">Estado</label><select class="form-select" id="filtro-estado"><option value="">Todos los estados</option><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
 </div>

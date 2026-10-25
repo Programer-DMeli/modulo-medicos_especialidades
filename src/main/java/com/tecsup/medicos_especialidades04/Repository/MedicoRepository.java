@@ -16,7 +16,9 @@ public interface MedicoRepository extends JpaRepository<Medico, Long> {
 
     Optional<Medico> findByCodigoMedico(String codigoMedico);
 
-    Optional<Medico> findByCmp(String cmp);
+    boolean existsByCmp(String cmp);
+
+    boolean existsByCmpAndIdMedicoNot(String cmp, Long idMedico);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from Medico m where m.idMedico = :id")

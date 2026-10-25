@@ -19,6 +19,7 @@ public class SessionModelAdvice {
         model.addAttribute("currentUser", authenticated ? authentication.getName() : "");
         model.addAttribute("currentRole", role);
         model.addAttribute("esAdministrador", admin);
+        model.addAttribute("esMedico", "MEDICO".equals(role));
         model.addAttribute("puedeProgramar", admin || "RECEPCIONISTA".equals(role));
     }
 }

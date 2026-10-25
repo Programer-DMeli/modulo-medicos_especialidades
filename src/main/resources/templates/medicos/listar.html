@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{layout/head :: head('Médicos')}"></head>
+<head th:replace="~{layout/head :: head(${esMedico} ? 'Mi perfil' : 'Médicos')}"></head>
 <body data-page="medicos-listar" th:attr="data-can-manage=${puedeProgramar},data-is-admin=${esAdministrador},data-role=${currentRole}">
 <a class="visually-hidden-focusable position-absolute p-3 bg-white" href="#contenido-principal">Saltar al contenido</a>
 <div th:replace="~{layout/navbar :: navbar}"></div>
@@ -8,8 +8,8 @@
     <aside th:replace="~{layout/sidebar :: sidebar}"></aside>
     <main class="app-main" id="contenido-principal" tabindex="-1">
 <div class="page-heading">
-            <div><h1>Médicos</h1><p>Consulta y administra el personal médico registrado.</p></div>
-            <a class="btn btn-primary" th:href="@{/medicos/registrar}" sec:authorize="hasAnyRole('ADMINISTRADOR','MEDICO')"><i class="bi bi-person-plus" aria-hidden="true"></i> Nuevo médico</a>
+            <div><h1 th:text="${esMedico} ? 'Mi perfil' : 'Médicos'">Médicos</h1><p th:text="${esAdministrador} ? 'Consulta y administra el personal médico registrado.' : 'Consulta la información médica disponible para tu cuenta.'">Consulta la información médica disponible para tu cuenta.</p></div>
+            <a class="btn btn-primary" th:href="@{/medicos/registrar}" sec:authorize="hasRole('ADMINISTRADOR')"><i class="bi bi-person-plus" aria-hidden="true"></i> Nuevo médico</a>
         </div>
         <div id="mensaje" aria-live="polite"></div>
         <div class="card content-card"><div class="card-body">

@@ -1,6 +1,17 @@
 # Configuracion y migracion
 
-La aplicacion usa MySQL por defecto, con `ddl-auto=validate`. Configure `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` en el entorno. No hay credenciales reales en los perfiles. El codigo anterior contenia una clave en el repositorio: si sigue siendo valida, cambiela en su servidor; retirar el texto del archivo no revoca esa clave.
+La aplicacion usa MySQL por defecto, con `ddl-auto=validate`. Para XAMPP local conecta a `localhost:3306/medico_especialidad`, con usuario `root` y password vacio. Puede sobrescribir la conexion con `DB_URL`, `DB_USERNAME` y `DB_PASSWORD`; en IntelliJ configure estas variables en la configuracion de ejecucion. El codigo anterior contenia una clave en el repositorio: si sigue siendo valida, cambiela en su servidor; retirar el texto del archivo no revoca esa clave.
+
+Arranque desde PowerShell con Java 21 instalado:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21.0.12.1'
+.\mvnw.cmd spring-boot:run
+```
+
+Abra `http://localhost:8080/login`. MySQL de XAMPP debe estar encendido; Spring Boot inicia su propio servidor web.
+
+XAMPP incluye MariaDB: el dialecto predeterminado es `org.hibernate.dialect.MariaDBDialect`, necesario para generar bloqueos `FOR UPDATE` compatibles. Para un servidor MySQL 8 configure `DB_DIALECT=org.hibernate.dialect.MySQLDialect`.
 
 ## Base nueva
 
@@ -28,6 +39,8 @@ SHOW CREATE TABLE horario_atencion;
 5. Compruebe `roles.estado`, las vigencias y las claves foraneas. Los horarios anteriores conservan fechas desconocidas y especialidad en NULL: revise y configure la informacion real en la interfaz. No se asignan valores inventados.
 6. Arranque usando las variables de entorno. Una incompatibilidad de esquema debe resolverse en la copia antes de aplicar la version a la base original.
 
+7. Para las cuentas de médicos aplique `003_cuentas_medicos.sql` una sola vez antes de arrancar esta versión. Añade `usuarios.medico_id`, su clave foránea y una restricción única; las cuentas anteriores permanecen sin vínculo. Al arrancar, cada médico sin cuenta recibe una cuenta nueva de rol `MEDICO`, sin inferir identidades por nombre, CMP o correo. El administrador puede entregar una contraseña nueva desde Usuarios → Generar credenciales. La sincronización no duplica cuentas ni reactiva usuarios deshabilitados.
+
 ## Demostracion aislada
 
 Ejecute `mvn spring-boot:run -Dspring-boot.run.profiles=demo` para seleccionar explicitamente H2 en memoria. Este perfil contiene solo datos ficticios y se pierde al cerrar. No utilice variables `SPRING_DATASOURCE_*` ni sobrescriba la conexion del perfil demo.
@@ -43,3 +56,5 @@ El perfil demo crea plantillas semanales con vigencias relativas a la semana de 
 ## Pruebas
 
 `mvn test` utiliza el perfil `test` en cada prueba de integracion. H2 es independiente de MySQL y sus tablas se recrean para el contexto de pruebas. Se conservan las pruebas JPA originales y se verifican autorizacion, CSRF, login, estados de usuario/rol y auditoria con principal autenticado. Esto no sustituye la evidencia de ejecucion final en una copia MySQL requerida para la sustentacion.
+
+Para comprobar las mismas pruebas en XAMPP ejecute `./scripts/verificar-mysql.ps1` desde PowerShell con Java 21. El script crea una base nueva `medicos_integracion_<sufijo>`, importa `docs/schema.sql`, valida el esquema y guarda las claves foraneas, filas de auditoria y resultados JUnit en `docs/evidencias/mysql/`. No apunta a la base de trabajo ni elimina registros de ella. La base aislada queda disponible para inspeccion. Para una cuenta diferente utilice `-Username` y la variable `TEST_DB_PASSWORD`.

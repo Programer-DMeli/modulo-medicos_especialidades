@@ -48,7 +48,7 @@ class SeguridadUsuariosRolesTests {
         mvc.perform(get("/api/medicos").with(user("recepcion").roles("RECEPCIONISTA")))
                 .andExpect(status().isOk());
         mvc.perform(get("/api/horarios").with(user("medico").roles("MEDICO")))
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/usuarios").with(user("recepcion").roles("RECEPCIONISTA")))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.message").exists());
         mvc.perform(post("/api/especialidades").with(user("medico").roles("MEDICO"))

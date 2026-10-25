@@ -130,6 +130,7 @@ class RelacionesJpaTests {
 
         // READ - OneToMany desde medico
         assertEquals(1, em.find(Medico.class, medico.getIdMedico()).getHorarios().size());
+        assertEquals(1, em.find(Consultorio.class, consultorio.getId()).getHorarios().size());
 
         // UPDATE
         leido.setHoraFin(LocalTime.of(14, 0));
@@ -170,6 +171,15 @@ class RelacionesJpaTests {
         assertEquals(1, em.find(Medico.class, medico.getIdMedico()).getMedicoEspecialidades().size());
         assertEquals(1,
                 em.find(Especialidades.class, especialidad.getIdEspecialidad()).getMedicoEspecialidades().size());
+
+        // UPDATE - modifica la tabla puente sin perder sus dos claves foraneas.
+        leida.setSubespecialidad("Seguimiento");
+        em.flush();
+        em.clear();
+        MedicoEspecialidad actualizada = em.find(MedicoEspecialidad.class, asignacion.getIdMedicoEspecialidad());
+        assertEquals("Seguimiento", actualizada.getSubespecialidad());
+        assertEquals(medico.getIdMedico(), actualizada.getMedico().getIdMedico());
+        assertEquals(especialidad.getIdEspecialidad(), actualizada.getEspecialidad().getIdEspecialidad());
 
         // DELETE
         em.remove(em.find(MedicoEspecialidad.class, asignacion.getIdMedicoEspecialidad()));

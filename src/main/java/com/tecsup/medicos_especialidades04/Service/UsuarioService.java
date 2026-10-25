@@ -44,12 +44,7 @@ public class UsuarioService {
 
     public Usuario registrar(Usuario usuario) {
         validarNombres(usuario);
-        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username es obligatorio");
-        }
-        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena es obligatoria");
-        }
+        validarCuenta(usuario, true);
         if (usuarioRepository.existsByUsername(usuario.getUsername().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya existe");
         }
@@ -64,10 +59,14 @@ public class UsuarioService {
 
     public Usuario actualizar(Long id, Usuario usuario) {
         validarNombres(usuario);
+        validarCuenta(usuario, false);
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         String usernameAnterior = existente.getUsername();
         Rol nuevoRol = resolverRolActivo(usuario.getRol());
+        if (existente.getMedico() != null && !"MEDICO".equals(nuevoRol.getNombre())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cuenta vinculada a un médico debe conservar el rol MEDICO");
+        }
         boolean nuevoEstado = usuario.getEstado() == null ? Boolean.TRUE.equals(existente.getEstado()) : usuario.getEstado();
         protegerUltimoAdministrador(existente, nuevoRol, nuevoEstado);
         existente.setNombres(usuario.getNombres());
@@ -133,6 +132,35 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
         }
         usuario.setNombres(usuario.getNombres().trim());
+        if (usuario.getNombres().length() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre admite hasta 100 caracteres");
+        }
+    }
+
+    private void validarCuenta(Usuario usuario, boolean nueva) {
+        if (nueva && (usuario.getUsername() == null || usuario.getUsername().isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username es obligatorio");
+        }
+        if (usuario.getUsername() != null && (usuario.getUsername().isBlank()
+                || usuario.getUsername().trim().length() > 50)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El username debe contener entre 1 y 50 caracteres");
+        }
+        String correo = usuario.getCorreo();
+        if (correo != null && !correo.isBlank()) {
+            correo = correo.trim();
+            if (correo.length() > 150 || !correo.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ingrese un correo válido de hasta 150 caracteres");
+            }
+            usuario.setCorreo(correo);
+        } else usuario.setCorreo(null);
+        String password = usuario.getPassword();
+        if (nueva && (password == null || password.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña es obligatoria");
+        }
+        if (password != null && !password.isBlank()
+                && password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña admite hasta 72 bytes UTF-8");
+        }
     }
 
     private void protegerUltimoAdministrador(Usuario actual, Rol nuevoRol, boolean nuevoEstado) {

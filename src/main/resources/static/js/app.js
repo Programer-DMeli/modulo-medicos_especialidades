@@ -42,6 +42,52 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+function showCredentials(credentials, medicoId) {
+    return new Promise(resolve => {
+        const dialog = document.createElement("dialog");
+        dialog.className = "credentials-dialog";
+        dialog.setAttribute("aria-labelledby", "credentials-heading");
+        dialog.innerHTML = `<h2 id="credentials-heading">Acceso del médico</h2>
+            <p>Entrega estas credenciales al médico. La contraseña solo se muestra en este momento.</p>
+            <form id="form-credentials">
+            <label for="access-user">Nombre de usuario</label><input class="form-control mb-3" id="access-user" name="username" maxlength="50" required ${medicoId ? '' : 'readonly'} value="${escapeHtml(credentials.usuario)}">
+            <div class="form-text mb-3">Puedes cambiar el usuario de acceso. La contraseña generada se conserva.</div>
+            <label for="access-password">Contraseña generada</label><input class="form-control mb-3" id="access-password" readonly value="${escapeHtml(credentials.password)}">
+            <p class="form-text">Acceso: /login. El rol MEDICO conserva sus menús y permisos. Si la cuenta está desactivada, actívala en Usuarios.</p>
+            <div id="credentials-error" class="text-danger mb-3" role="alert"></div>
+            <button class="btn btn-primary" type="submit">Guardar usuario y continuar</button></form>`;
+        let saving = false;
+        dialog.addEventListener("cancel", event => { event.preventDefault(); });
+        dialog.querySelector("form").addEventListener("submit", async event => {
+            event.preventDefault();
+            if (saving) return;
+            const field = dialog.querySelector("#access-user");
+            const error = dialog.querySelector("#credentials-error");
+            const button = dialog.querySelector('[type="submit"]');
+            const username = field.value.trim();
+            if (!username) { error.textContent = "El nombre de usuario es obligatorio."; field.focus(); return; }
+            saving = true;
+            button.disabled = true;
+            error.textContent = "";
+            try {
+                if (medicoId && username !== credentials.usuario) {
+                    const saved = await api(`/api/usuarios/medico/${medicoId}/username`, {
+                        method: "PUT", headers: jsonHeaders, body: JSON.stringify({ username })
+                    });
+                    credentials.usuario = saved.username;
+                }
+                dialog.close();
+            } catch (failure) {
+                error.textContent = failure.message;
+                field.focus();
+            } finally { saving = false; button.disabled = false; }
+        });
+        dialog.addEventListener("close", () => { dialog.remove(); resolve(); }, { once: true });
+        document.body.append(dialog);
+        dialog.showModal();
+    });
+}
+
 function showMessage(message, type = "danger") {
     const container = document.querySelector("#mensaje");
     if (container) {
@@ -70,6 +116,30 @@ function statusBadge(status) {
     return `<span class="badge rounded-pill text-bg-${color}">${escapeHtml(label || "SIN ESTADO")}</span>`;
 }
 
+function scheduleExpired(schedule) {
+    return Boolean(schedule.vigenteHasta && schedule.vigenteHasta < today());
+}
+
+function scheduleActions(schedule) {
+    if (!canProgram()) return '<span class="text-muted">Consulta</span>';
+    const historical = scheduleExpired(schedule);
+    const edit = historical ? "" : `<a class="btn btn-sm btn-outline-primary" href="/horarios/editar/${schedule.idHorario}">Editar</a>`;
+    const action = historical ? "Eliminar registro histórico" : "Retirar horario";
+    return `<div class="btn-group">${edit}<button class="btn btn-sm btn-outline-danger" data-delete-schedule="${schedule.idHorario}" data-historical="${historical}" title="${action}" aria-label="${action} de ${escapeHtml(doctorName(schedule.medico))}"><i class="bi bi-trash" aria-hidden="true"></i></button></div>`;
+}
+
+function scheduleValidity(schedule) {
+    const dates = schedule.vigenteDesde ? `${escapeHtml(formatDate(schedule.vigenteDesde))}<small>${schedule.vigenteHasta ? `Hasta ${escapeHtml(formatDate(schedule.vigenteHasta))}` : "Sin fecha final"}</small>` : '<span class="badge text-bg-warning">Revisar vigencia</span>';
+    return dates + (scheduleExpired(schedule) ? '<span class="badge text-bg-danger mt-1">Vigencia Vencida</span>' : '');
+}
+
+function scheduleEditDates(schedule) {
+    const expired = scheduleExpired(schedule);
+    const minimum = !expired && schedule.vigenteDesde && schedule.vigenteDesde < today() ? schedule.vigenteDesde : today();
+    return { minimum, desde: expired ? today() : schedule.vigenteDesde || today(),
+        hasta: expired || (schedule.vigenteHasta && schedule.vigenteHasta < minimum) ? "" : schedule.vigenteHasta || "" };
+}
+
 function scheduleStateControl(schedule) {
     const alreadyClosed = schedule.vigenteHasta && schedule.vigenteHasta <= today();
     if (!canProgram() || alreadyClosed) return statusBadge(schedule.estado);
@@ -86,6 +156,7 @@ function clickableState(status, selector, id, nextState, enabled = true) {
 
 function doctorName(doctor) {
     if (!doctor) return "Sin médico";
+    if (doctor.nombreCompleto?.trim()) return doctor.nombreCompleto.trim();
     return [doctor.nombres, doctor.apellidoPaterno, doctor.apellidoMaterno].filter(Boolean).join(" ");
 }
 
@@ -228,6 +299,7 @@ async function registerDoctor() {
             data.especialidadIds = [...form.querySelectorAll('[name="especialidadIds"]:checked')].map(input => Number(input.value));
             if (!data.especialidadIds.length) { form.querySelector('[name="especialidadIds"]')?.focus(); throw new Error("Selecciona al menos una especialidad."); }
             const saved = await api(id ? `/api/medicos/${id}` : "/api/medicos", { method: id ? "PUT" : "POST", headers: jsonHeaders, body: JSON.stringify(data) });
+            if (saved.credencialesAcceso) await showCredentials(saved.credencialesAcceso, saved.idMedico);
             setFlash(id ? "Médico actualizado correctamente" : `Médico ${saved.codigoMedico} registrado. Configura su horario y consultorio.`);
             location.href = id || !canProgram() ? "/medicos" : `/horarios/registrar?medicoId=${saved.idMedico}`;
         });
@@ -355,12 +427,20 @@ async function bindScheduleSpecialties(form, selectedSpecialty, selectedOffice) 
     specialtyField.addEventListener("change", () => { renderOffices(); defaultDuration(); });
 }
 
-function schedulePayload(data) {
+function schedulePayload(data, originalStart = null) {
     if (data.horaInicio >= data.horaFin) invalidField("horaFin", "La hora de fin debe ser posterior a la hora de inicio.");
     const minutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
     if (Number(data.duracionCita) <= 0 || Number(data.duracionCita) > minutes(data.horaFin) - minutes(data.horaInicio)) invalidField("duracionCita", "La duración debe ser positiva y caber dentro de la franja.");
     if (!data.vigenteDesde) invalidField("vigenteDesde", "Indica desde qué fecha se aplica este horario.");
     if (data.vigenteHasta && data.vigenteHasta < data.vigenteDesde) invalidField("vigenteHasta", "La fecha final no puede ser anterior al inicio de vigencia.");
+    if (data.vigenteDesde < today() && data.vigenteDesde !== originalStart) invalidField("vigenteDesde", "La nueva vigencia debe comenzar hoy o en una fecha futura.");
+    if (data.vigenteHasta) {
+        const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const selectedDay = days.indexOf(data.diaSemana);
+        const startDay = new Date(`${data.vigenteDesde}T12:00:00`).getDay();
+        const firstAttention = addDays(data.vigenteDesde, (selectedDay - startDay + 7) % 7);
+        if (selectedDay >= 0 && firstAttention > data.vigenteHasta) invalidField("vigenteHasta", `La vigencia debe incluir al menos un ${data.diaSemana.toLocaleLowerCase("es")}. Amplía la fecha final hasta el ${formatDate(firstAttention)} o cambia el día de atención.`);
+    }
     return {
         medico: { idMedico: Number(data.medicoId) },
         especialidad: data.especialidadId ? { idEspecialidad: Number(data.especialidadId) } : null,
@@ -399,7 +479,7 @@ async function listSchedules() {
     const body = document.querySelector("#tabla-horarios");
     const doctorFilter = document.querySelector("#filtro-medico");
     if (doctorFilter) {
-        fillSelect(doctorFilter, doctors, item => item.idMedico, doctorName, "Todos los médicos", new URLSearchParams(location.search).get("medicoId"));
+        fillSelect(doctorFilter, doctors, item => item.idMedico, doctorName, document.body.dataset.role === "MEDICO" ? "Mi programación" : "Todos los médicos", document.body.dataset.role === "MEDICO" ? "" : new URLSearchParams(location.search).get("medicoId"));
     }
     const render = () => {
         const selectedDoctor = doctorFilter?.value;
@@ -418,9 +498,9 @@ async function listSchedules() {
             <td><strong>${escapeHtml(String(item.horaInicio).slice(0, 5))} - ${escapeHtml(String(item.horaFin).slice(0, 5))}</strong></td>
             <td>${escapeHtml(item.duracionCita)} min</td>
             <td>${item.consultorio ? escapeHtml(`${item.consultorio.codigo} · ${item.consultorio.nombre}`) : '<span class="badge text-bg-warning">Pendiente</span>'}</td>
-            <td>${item.vigenteDesde ? `${escapeHtml(formatDate(item.vigenteDesde))}<small>${item.vigenteHasta ? `Hasta ${escapeHtml(formatDate(item.vigenteHasta))}` : "Sin fecha final"}</small>` : '<span class="badge text-bg-warning">Revisar vigencia</span>'}</td>
+            <td>${scheduleValidity(item)}</td>
             <td>${scheduleStateControl(item)}</td>
-            <td class="text-end">${canProgram() ? `<div class="btn-group"><a class="btn btn-sm btn-outline-primary" href="/horarios/editar/${item.idHorario}">Editar</a><button class="btn btn-sm btn-outline-danger" data-delete-schedule="${item.idHorario}" aria-label="Retirar horario de ${escapeHtml(doctorName(item.medico))}"><i class="bi bi-trash" aria-hidden="true"></i></button></div>` : '<span class="text-muted">Consulta</span>'}</td>
+            <td class="text-end">${scheduleActions(item)}</td>
         </tr>`).join("") : emptyRow(8, schedules.length ? "No hay horarios con estos filtros." : "Aún no hay horarios. Configura la primera franja habitual de un médico.");
     };
     render();
@@ -432,7 +512,7 @@ async function listSchedules() {
             stateButton.disabled = true;
             try {
                 await api(`/api/horarios/${stateButton.dataset.toggleSchedule}/estado?estado=${nextState}`, { method: "PUT" });
-                setFlash(nextState === "ACTIVO" ? "Horario activado correctamente." : "Horario inactivado correctamente.");
+                setFlash("Estado actualizado. Si el horario ya comenzó, el cambio se aplica desde mañana y conserva el historial.");
                 location.reload();
             } catch (error) {
                 stateButton.disabled = false;
@@ -441,10 +521,12 @@ async function listSchedules() {
             return;
         }
         const button = event.target.closest("[data-delete-schedule]");
-        if (!button || !confirm("¿Retirar este horario? Si ya comenzó, se conservará su historial y se cerrará su vigencia.")) return;
+        if (!button) return;
+        const historical = button.dataset.historical === "true";
+        if (!confirm(historical ? "¿Eliminar definitivamente este registro histórico? Esta acción no se puede deshacer." : "¿Retirar este horario? Si ya comenzó, se conservará su historial y se cerrará su vigencia.")) return;
         try {
             await api(`/api/horarios/${button.dataset.deleteSchedule}`, { method: "DELETE" });
-            setFlash("Horario retirado correctamente");
+            setFlash(historical ? "Registro histórico eliminado correctamente" : "Horario retirado correctamente");
             location.reload();
         } catch (error) {
             showMessage(error.message);
@@ -464,22 +546,27 @@ async function editSchedule() {
     await bindScheduleSpecialties(form, schedule.especialidad?.idEspecialidad, schedule.consultorio?.id);
     form.elements.estado.value = schedule.estado;
     const started = schedule.vigenteDesde && schedule.vigenteDesde <= today();
-    const finished = schedule.vigenteHasta && schedule.vigenteHasta < today();
-    form.elements.vigenteDesde.value = started ? addDays(today(), 1) : schedule.vigenteDesde || today();
-    form.elements.vigenteDesde.min = started ? addDays(today(), 1) : today();
-    form.elements.vigenteHasta.value = schedule.vigenteHasta || "";
+    const finished = scheduleExpired(schedule);
+    const dates = scheduleEditDates(schedule);
+    form.elements.vigenteDesde.value = dates.desde;
+    form.elements.vigenteDesde.min = dates.minimum;
+    form.elements.vigenteHasta.value = dates.hasta;
+    const updateEndMinimum = () => { form.elements.vigenteHasta.min = form.elements.vigenteDesde.value || today(); };
+    updateEndMinimum();
+    form.elements.vigenteDesde.addEventListener("change", updateEndMinimum);
     if (finished) {
-        showMessage("Este horario ya finalizó y se conserva como historial. Registra una nueva franja para programar otra vigencia.", "warning");
-        [...form.elements].forEach(field => { field.disabled = true; });
+        showMessage("Vigencia Vencida. Selecciona las nuevas fechas de vigencia. Al guardar se renovará el horario y se conservará el periodo anterior como historial.", "warning");
+        document.querySelector(".page-heading h1").textContent = "Renovar vigencia";
+        form.querySelector('[type="submit"]').textContent = "Renovar vigencia";
     } else if (started) {
-        showMessage("El cambio se aplicará desde la nueva fecha de vigencia. Se conservará la versión anterior hasta el día previo.", "warning");
+        showMessage("Los cambios actualizarán este mismo horario. Puedes conservar su fecha de inicio original.", "info");
     }
     bindScheduleSummary(form);
     form.addEventListener("submit", event => {
         event.preventDefault();
         submitForm(form, async data => {
-            await api(`/api/horarios/${id}`, { method: "PUT", headers: jsonHeaders, body: JSON.stringify(schedulePayload(data)) });
-            setFlash("Horario actualizado correctamente");
+            await api(`/api/horarios/${id}`, { method: "PUT", headers: jsonHeaders, body: JSON.stringify(schedulePayload(data, finished ? null : schedule.vigenteDesde)) });
+            setFlash(finished ? "Vigencia renovada correctamente. Se conservó el historial anterior." : "Horario actualizado correctamente");
             location.href = "/horarios";
         });
     });
@@ -581,17 +668,13 @@ async function listUsers() {
             <td>${clickableState(u.estado, "data-toggle-user", u.idUsuario, !u.estado, true)}</td>
             <td class="text-end"><div class="btn-group">
                 <a class="btn btn-sm btn-outline-primary" href="/usuarios/editar/${u.idUsuario}" title="Editar"><i class="bi bi-pencil"></i></a>
-                <button class="btn btn-sm btn-outline-danger" data-delete-user="${u.idUsuario}" title="Eliminar"><i class="bi bi-trash"></i></button>
             </div></td>
         </tr>`).join("") : emptyRow(6, "No hay usuarios registrados");
 
     body.addEventListener("click", async event => {
-        const del = event.target.closest("[data-delete-user]");
         const tog = event.target.closest("[data-toggle-user]");
-        if (del && confirm("¿Eliminar este usuario?")) {
-            try { await api(`/api/usuarios/${del.dataset.deleteUser}`, { method: "DELETE" }); setFlash("Usuario eliminado"); location.reload(); } catch (e) { showMessage(e.message); }
-        }
         if (tog) {
+            if (tog.dataset.nextState === "false" && !confirm("¿Desactivar este usuario? Su sesión se cerrará y no podrá ingresar hasta que lo actives.")) return;
             const nuevo = tog.dataset.nextState;
             try { await api(`/api/usuarios/${tog.dataset.toggleUser}/estado?activo=${nuevo}`, { method: "PUT" }); setFlash("Estado actualizado"); location.reload(); } catch (e) { showMessage(e.message); }
         }
@@ -658,7 +741,7 @@ async function listRoles() {
             <td>${clickableState(r.estado, "data-toggle-role", r.idRol, !r.estado, true)}</td>
             <td class="text-end"><div class="btn-group">
                 <a class="btn btn-sm btn-outline-primary" href="/roles/editar/${r.idRol}" aria-label="Editar ${escapeHtml(r.nombre)}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
-                <button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}" aria-label="Eliminar ${escapeHtml(r.nombre)}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                ${['ADMINISTRADOR', 'MEDICO', 'RECEPCIONISTA'].includes(r.nombre) ? '' : `<button class="btn btn-sm btn-outline-danger" data-delete-role="${r.idRol}" aria-label="Eliminar ${escapeHtml(r.nombre)}"><i class="bi bi-trash" aria-hidden="true"></i></button>`}
             </div></td>
         </tr>`).join("") : emptyRow(4, "No hay roles registrados");
 
@@ -814,8 +897,8 @@ async function initAgenda() {
     const weekday = new Date(`${date}T12:00:00`).getDay();
     dateField.value = addDays(date, -(weekday === 0 ? 6 : weekday - 1));
     const [doctors, offices] = await Promise.all([api("/api/medicos"), api("/api/consultorios")]);
-    fillSelect(document.querySelector("#agenda-medico"), doctors, item => item.idMedico, doctorName, "Todos los médicos", new URLSearchParams(location.search).get("medicoId"));
-    fillSelect(document.querySelector("#agenda-consultorio"), offices, item => item.id, item => `${item.codigo} · ${item.nombre}`, "Todos los consultorios");
+    fillSelect(document.querySelector("#agenda-medico"), doctors, item => item.idMedico, doctorName, document.body.dataset.role === "MEDICO" ? "Mi programación" : "Todos los médicos", document.body.dataset.role === "MEDICO" ? "" : new URLSearchParams(location.search).get("medicoId"));
+    fillSelect(document.querySelector("#agenda-consultorio"), offices, item => item.id, item => `${item.codigo} · ${item.nombre}`, document.body.dataset.role === "MEDICO" ? "Mis consultorios" : "Todos los consultorios");
     let version = 0;
     const render = async () => {
         const request = ++version;
@@ -911,7 +994,7 @@ async function initHome() {
     const [doctors, schedules, blocks] = await Promise.all([api("/api/medicos"), api("/api/horarios"), api(`/api/horarios/agenda?desde=${today()}&hasta=${today()}`)]);
     const pending = schedules.filter(item => item.estado === "ACTIVO" && (!item.especialidad || !item.consultorio || !item.vigenteDesde)).length;
     const attention = blocks.filter(item => item.tipo === "ATENCION");
-    document.querySelector("#resumen-inicio").innerHTML = `<div class="summary-list"><div class="summary-item"><strong>${doctors.filter(item => item.estado === "ACTIVO").length}</strong><span>Médicos activos</span></div><div class="summary-item"><strong>${attention.length}</strong><span>Franjas de hoy</span></div><div class="summary-item"><strong>${pending}</strong><span>Horarios por completar</span></div></div>`;
+    document.querySelector("#resumen-inicio").innerHTML = `<div class="summary-list"><div class="summary-item"><strong>${document.body.dataset.role === "MEDICO" ? (doctors[0]?.especialidades?.length || 0) : doctors.filter(item => item.estado === "ACTIVO").length}</strong><span>${document.body.dataset.role === "MEDICO" ? "Mis especialidades" : "Médicos activos"}</span></div><div class="summary-item"><strong>${attention.length}</strong><span>Franjas de hoy</span></div><div class="summary-item"><strong>${pending}</strong><span>Horarios por completar</span></div></div>`;
     document.querySelector("#agenda-hoy").innerHTML = blocks.length ? blocks.map(block => `<div class="today-row"><span class="time-range">${escapeHtml(String(block.horaInicio).slice(0, 5))}–${escapeHtml(String(block.horaFin).slice(0, 5))}</span><div class="today-info"><strong>${escapeHtml(doctorName(block.medico))}</strong><small>${escapeHtml(block.tipo === "AUSENCIA" ? block.motivo || "Ausencia" : block.consultorio ? `${block.consultorio.codigo} · ${block.consultorio.nombre}` : "Pendiente de consultorio")}</small></div><span class="badge ${block.tipo === "ATENCION" ? "text-bg-success" : block.tipo === "AUSENCIA" ? "text-bg-secondary" : "text-bg-warning"}">${block.tipo === "ATENCION" ? "Atención" : block.tipo === "AUSENCIA" ? "Ausencia" : "Pendiente"}</span></div>`).join("") : '<div class="empty-cell"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>No hay atención programada para hoy.</span><a href="/horarios/agenda">Consultar la semana</a></div>';
 }
 

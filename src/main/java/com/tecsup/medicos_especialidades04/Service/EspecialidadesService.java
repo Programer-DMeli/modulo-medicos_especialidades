@@ -13,6 +13,7 @@ import java.util.List;
 @Service
 @Transactional
 public class EspecialidadesService {
+    @Autowired private AlcanceMedicoService alcance;
 
     @Autowired
     private EspecialidadesRepository repo;
@@ -21,7 +22,7 @@ public class EspecialidadesService {
     private AuditoriaService auditoriaService;
 
     public List<Especialidades> listar() {
-        return repo.findAll();
+        return alcance.esMedico() ? alcance.especialidades() : repo.findAll();
     }
 
     public Especialidades guardar(Especialidades especialidad) {
@@ -65,6 +66,8 @@ public class EspecialidadesService {
     }
 
     public Especialidades obtener(Long id) {
+        if (alcance.esMedico()) return alcance.especialidades().stream().filter(item -> item.getIdEspecialidad().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no disponible para tu cuenta"));
         return repo.findById(id).orElse(null);
     }
 

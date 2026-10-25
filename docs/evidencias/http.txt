@@ -1,0 +1,6 @@
+Login HTTP: 200
+Formulario: True
+JavaScript HTTP: 200
+Activar/desactivar visible en JavaScript: True
+CSS HTTP: 200
+API de usuarios sin sesión HTTP: 401

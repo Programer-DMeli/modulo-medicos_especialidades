@@ -84,6 +84,18 @@ public class DemoDataInitializer implements ApplicationRunner {
             doctor.setFechaIngreso(today.minusYears(1));
             doctor.setEstado(EstadoMedico.ACTIVO);
             doctor = medicos.save(doctor);
+            // Solo datos nuevos y desechables del perfil demo: dos cuentas personales para revisar el aislamiento.
+            if (index == 0) {
+                Usuario personal = usuarios.findByUsername("medico.demo").orElseThrow();
+                personal.setMedico(doctor);
+                usuarios.save(personal);
+            } else if (index == 1) {
+                Usuario personal = new Usuario();
+                personal.setUsername("medico2.demo"); personal.setNombres("Segundo médico de demostración");
+                personal.setPassword(passwords.encode("Demo2026!"));
+                personal.setRol(roles.findByNombre("MEDICO").orElseThrow()); personal.setMedico(doctor);
+                usuarios.save(personal);
+            }
             asignaciones.save(new MedicoEspecialidad(doctor, specialty, ""));
             for (String day : days) {
                 HorarioAtencion schedule = new HorarioAtencion();

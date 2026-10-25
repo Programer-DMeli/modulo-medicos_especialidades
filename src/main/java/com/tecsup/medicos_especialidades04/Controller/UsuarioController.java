@@ -15,6 +15,19 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService service;
+    @Autowired private com.tecsup.medicos_especialidades04.Service.CuentaMedicoService cuentasMedicos;
+
+    public record NombreUsuario(String username) {}
+
+    @PutMapping("/medico/{medicoId}/username")
+    public NombreUsuario cambiarUsername(@PathVariable Long medicoId, @RequestBody NombreUsuario solicitud) {
+        return new NombreUsuario(cuentasMedicos.cambiarUsername(medicoId, solicitud.username()));
+    }
+
+    @PostMapping("/{id}/credenciales")
+    public com.tecsup.medicos_especialidades04.Model.CredencialesMedico credenciales(@PathVariable Long id) {
+        return cuentasMedicos.restablecer(id);
+    }
 
     @GetMapping
     public List<Usuario> listar() {

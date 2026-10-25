@@ -113,6 +113,12 @@ public class RolService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del rol es obligatorio");
         }
         rol.setNombre(rol.getNombre().trim().toUpperCase(java.util.Locale.ROOT));
+        if (rol.getNombre().length() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del rol admite hasta 50 caracteres");
+        }
+        if (rol.getDescripcion() != null && rol.getDescripcion().length() > 200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción admite hasta 200 caracteres");
+        }
     }
 
     private boolean esRolBase(String nombre) {

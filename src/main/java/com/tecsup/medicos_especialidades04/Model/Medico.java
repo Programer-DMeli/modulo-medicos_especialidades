@@ -10,6 +10,29 @@ import java.util.List;
 @Table(name = "medico")
 public class Medico {
 
+    @OneToOne(mappedBy = "medico", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Usuario usuario;
+
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    public String getNombreCompleto() {
+        // La cuenta vinculada es la fuente del nombre visible, también para datos legados.
+        if (usuario != null && usuario.getNombres() != null && !usuario.getNombres().isBlank()) {
+            return usuario.getNombres().trim();
+        }
+        return java.util.stream.Stream.of(nombres, apellidoPaterno, apellidoMaterno)
+                .filter(valor -> valor != null && !valor.isBlank())
+                .map(String::trim).collect(java.util.stream.Collectors.joining(" "));
+    }
+
+    @Transient
+    @JsonIgnore
+    private CredencialesMedico credencialesAcceso;
+    public CredencialesMedico getCredencialesAcceso() { return credencialesAcceso; }
+    public void setCredencialesAcceso(CredencialesMedico value) { credencialesAcceso = value; }
+
     @Transient
     private List<Long> especialidadIds;
 

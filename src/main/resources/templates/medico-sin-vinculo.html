@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/head :: head('Cuenta sin médico vinculado')}"></head>
+<body><div th:replace="~{layout/navbar :: navbar}"></div><div class="app-shell">
+<aside th:replace="~{layout/sidebar :: sidebar}"></aside>
+<main class="app-main"><h1>Cuenta sin médico vinculado</h1>
+<p class="alert alert-warning" role="alert">Tu cuenta MEDICO no tiene un médico vinculado. Contacta al administrador para vincularla. Las consultas personales están bloqueadas.</p>
+</main></div></body></html>

@@ -36,11 +36,14 @@ CREATE TABLE usuarios (
     correo         VARCHAR(150) NULL,
     estado         BOOLEAN      NOT NULL, -- true = activo, false = desactivado
     id_rol         BIGINT       NULL,
+    medico_id      BIGINT       NULL,
     fecha_creacion DATETIME(6)  NULL,
     PRIMARY KEY (id_usuario),
     CONSTRAINT uk_usuarios_username UNIQUE (username),
+    CONSTRAINT uk_usuario_medico UNIQUE (medico_id),
     CONSTRAINT fk_usuarios_rol FOREIGN KEY (id_rol) REFERENCES roles (id_rol)
 ) ENGINE = InnoDB;
+
 
 -- ----------------------------------------------------------------------------
 -- medico
@@ -159,3 +162,6 @@ CREATE TABLE auditoria (
     registro_id  BIGINT       NULL,
     PRIMARY KEY (id_auditoria)
 ) ENGINE = InnoDB;
+
+ALTER TABLE usuarios ADD CONSTRAINT fk_usuario_medico
+    FOREIGN KEY (medico_id) REFERENCES medico (id_medico);

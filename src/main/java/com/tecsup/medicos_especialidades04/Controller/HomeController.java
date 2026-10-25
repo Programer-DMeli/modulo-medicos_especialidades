@@ -7,9 +7,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class HomeController {
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.tecsup.medicos_especialidades04.Service.AlcanceMedicoService alcance;
+
+    private String consulta(String vista) {
+        if (alcance.esMedico()) {
+            try { alcance.medicoId(); }
+            catch (org.springframework.web.server.ResponseStatusException ex) { return "medico-sin-vinculo"; }
+        }
+        return vista;
+    }
+
     @GetMapping("/")
     public String inicio() {
-        return "index";
+        return consulta("index");
     }
 
     @GetMapping("/login")
@@ -24,7 +35,7 @@ public class HomeController {
 
     @GetMapping("/medicos")
     public String listarMedicos() {
-        return "medicos/listar";
+        return consulta("medicos/listar");
     }
 
     @GetMapping("/medicos/registrar")
@@ -34,7 +45,7 @@ public class HomeController {
 
     @GetMapping("/especialidades")
     public String listarEspecialidades() {
-        return "especialidades/listar";
+        return consulta("especialidades/listar");
     }
 
     @GetMapping("/especialidades/registrar")
@@ -49,17 +60,17 @@ public class HomeController {
 
     @GetMapping("/horarios")
     public String listarHorarios() {
-        return "horarios/listar";
+        return consulta("horarios/listar");
     }
 
     @GetMapping("/horarios/agenda")
     public String agendaHorarios() {
-        return "horarios/agenda";
+        return consulta("horarios/agenda");
     }
 
     @GetMapping("/horarios/ausencias")
     public String ausenciasHorarios() {
-        return "horarios/ausencias";
+        return consulta("horarios/ausencias");
     }
 
     @GetMapping("/horarios/registrar")

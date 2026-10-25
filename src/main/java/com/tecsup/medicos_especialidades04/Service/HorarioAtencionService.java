@@ -17,6 +17,7 @@ import java.util.*;
 
 @Service
 public class HorarioAtencionService {
+    @Autowired private AlcanceMedicoService alcance;
     private static final ZoneId ZONA_CLINICA = ZoneId.of("America/Lima");
     private static final List<String> DIAS = List.of("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo");
 
@@ -29,10 +30,12 @@ public class HorarioAtencionService {
     @Autowired private AuditoriaService auditoriaService;
 
     @Transactional(readOnly = true)
-    public List<HorarioAtencion> listar() { return repo.findAll(); }
+    public List<HorarioAtencion> listar() { return alcance.esMedico() ? alcance.horarios() : repo.findAll(); }
 
     @Transactional(readOnly = true)
-    public HorarioAtencion obtener(Long id) { return repo.findById(id).orElse(null); }
+    public HorarioAtencion obtener(Long id) { if (alcance.esMedico()) return alcance.horarios().stream().filter(item -> item.getIdHorario().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recurso no disponible para tu cuenta"));
+        return repo.findById(id).orElse(null); }
 
     // READ_COMMITTED evita leer una instantánea anterior a la espera de los bloqueos en MySQL.
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -56,7 +59,18 @@ public class HorarioAtencionService {
         if (horario == null || (horario.getIdHorario() != null && !id.equals(horario.getIdHorario()))) {
             throw error(HttpStatus.BAD_REQUEST, "El identificador del horario no coincide con la ruta");
         }
-        return actualizarBloqueado(existente, horario);
+        if (existente.getVigenteHasta() != null && existente.getVigenteHasta().isBefore(hoy())) {
+            return actualizarBloqueado(existente, horario);
+        }
+        validarDatos(horario);
+        // Al editar se puede conservar la fecha original, aunque el periodo ya haya comenzado.
+        if (!Objects.equals(horario.getVigenteDesde(), existente.getVigenteDesde())) validarInicioNuevo(horario);
+        bloquearRecursos(horario, existente);
+        validarCruces(horario, existente.getIdHorario());
+        copiarDatos(horario, existente);
+        HorarioAtencion saved = repo.save(existente);
+        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", saved.getIdHorario());
+        return saved;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -75,13 +89,9 @@ public class HorarioAtencionService {
 
         HorarioAtencion solicitud = copiar(existente);
         solicitud.setEstado(nuevoEstado);
-        validarDatos(solicitud);
-        bloquearRecursos(solicitud, existente);
-        validarCruces(solicitud, existente.getIdHorario());
-        copiarDatos(solicitud, existente);
-        HorarioAtencion guardado = repo.save(existente);
-        auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", guardado.getIdHorario());
-        return guardado;
+        // Reutiliza el versionado: un estado nuevo no debe reescribir la agenda histórica.
+        if (!existente.getVigenteDesde().isAfter(hoy())) solicitud.setVigenteDesde(hoy().plusDays(1));
+        return actualizarBloqueado(existente, solicitud);
     }
 
     // También la utiliza ConsultorioService: ninguna ruta evita las reglas.
@@ -101,24 +111,22 @@ public class HorarioAtencionService {
     }
 
     private HorarioAtencion actualizarBloqueado(HorarioAtencion existente, HorarioAtencion solicitud) {
+        boolean vencido = existente.getVigenteHasta() != null && existente.getVigenteHasta().isBefore(hoy());
         validarDatos(solicitud);
         validarInicioNuevo(solicitud);
-        if (existente.getVigenteHasta() != null && existente.getVigenteHasta().isBefore(hoy())) {
-            throw error(HttpStatus.CONFLICT, "El horario terminó; crea uno nuevo para conservar su historial");
-        }
         boolean iniciado = existente.getVigenteDesde() != null && !existente.getVigenteDesde().isAfter(hoy());
-        if (iniciado && !solicitud.getVigenteDesde().isAfter(hoy())) {
+        if (iniciado && !vencido && !solicitud.getVigenteDesde().isAfter(hoy())) {
             throw error(HttpStatus.CONFLICT, "Para modificar un horario iniciado, elige una vigencia desde mañana; se creará una versión nueva");
         }
         bloquearRecursos(solicitud, existente);
         validarCruces(solicitud, existente.getIdHorario());
-        if (iniciado) {
+        if (iniciado || vencido) {
             LocalDate cierre = solicitud.getVigenteDesde().minusDays(1);
-            if (existente.getVigenteHasta() == null || cierre.isBefore(existente.getVigenteHasta())) {
+            if (!vencido && (existente.getVigenteHasta() == null || cierre.isBefore(existente.getVigenteHasta()))) {
                 existente.setVigenteHasta(cierre);
+                repo.save(existente);
+                auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", existente.getIdHorario());
             }
-            repo.save(existente);
-            auditoriaService.registrarOperacion("UPDATE", "HorarioAtencion", existente.getIdHorario());
             HorarioAtencion saved = repo.save(copiar(solicitud));
             auditoriaService.registrarOperacion("INSERT", "HorarioAtencion", saved.getIdHorario());
             return saved;
@@ -136,6 +144,11 @@ public class HorarioAtencionService {
         HorarioAtencion recursos = copiar(horario);
         recursos.setEstado("INACTIVO");
         bloquearRecursos(recursos, null);
+        if (horario.getVigenteHasta() != null && horario.getVigenteHasta().isBefore(hoy())) {
+            repo.delete(horario);
+            auditoriaService.registrarOperacion("DELETE", "HorarioAtencion", id);
+            return;
+        }
         if (horario.getVigenteDesde() != null && !horario.getVigenteDesde().isAfter(hoy())) {
             if (horario.getVigenteHasta() != null && !horario.getVigenteHasta().isAfter(hoy())) {
                 throw error(HttpStatus.CONFLICT, "El horario ya terminó o está cerrado; se conserva su historial");
@@ -256,7 +269,7 @@ public class HorarioAtencionService {
     }
 
     @Transactional(readOnly = true)
-    public List<AusenciaMedico> listarAusencias() { return ausenciaRepo.listarConMedico(); }
+    public List<AusenciaMedico> listarAusencias() { return alcance.esMedico() ? alcance.ausencias() : ausenciaRepo.listarConMedico(); }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public AusenciaMedico guardarAusencia(AusenciaMedico ausencia) {
@@ -302,7 +315,7 @@ public class HorarioAtencionService {
         auditoriaService.registrarOperacion("UPDATE", "AusenciaMedico", id);
     }
 
-    public record MedicoAgenda(Long idMedico, String nombres, String apellidoPaterno, String apellidoMaterno, String codigoMedico) {}
+    public record MedicoAgenda(Long idMedico, String nombres, String apellidoPaterno, String apellidoMaterno, String codigoMedico, String nombreCompleto) {}
     public record ConsultorioAgenda(Long id, String codigo, String nombre) {}
     public record EspecialidadAgenda(Long idEspecialidad, String nombre) {}
     public record BloqueAgenda(Long idHorario, MedicoAgenda medico, ConsultorioAgenda consultorio, LocalDate fecha,
@@ -310,14 +323,21 @@ public class HorarioAtencionService {
 
     @Transactional(readOnly = true)
     public List<BloqueAgenda> agenda(LocalDate desde, LocalDate hasta, Long medicoId, Long consultorioId) {
+        if (alcance.esMedico()) {
+            alcance.comprobarFiltro(medicoId);
+            medicoId = alcance.medicoId();
+            if (consultorioId != null && alcance.consultorios().stream().noneMatch(c -> c.getId().equals(consultorioId))) alcance.noEncontrado();
+        }
         if (desde == null || hasta == null || hasta.isBefore(desde) || ChronoUnit.DAYS.between(desde, hasta) >= 31) {
             throw error(HttpStatus.BAD_REQUEST, "Elige un rango válido de hasta 31 días, incluyendo inicio y fin");
         }
         if (medicoId != null && !medicoRepo.existsById(medicoId)) throw error(HttpStatus.NOT_FOUND, "El médico no existe");
         if (consultorioId != null && !consultorioRepo.existsById(consultorioId)) throw error(HttpStatus.NOT_FOUND, "El consultorio no existe");
-        List<AusenciaMedico> ausencias = ausenciaRepo.buscarEnRango(desde.atStartOfDay(), hasta.plusDays(1).atStartOfDay());
+        List<AusenciaMedico> ausencias = alcance.esMedico() ? alcance.ausencias().stream().filter(a -> "ACTIVO".equals(a.getEstado())).toList() : ausenciaRepo.buscarEnRango(desde.atStartOfDay(), hasta.plusDays(1).atStartOfDay());
         List<BloqueAgenda> bloques = new ArrayList<>();
-        for (HorarioAtencion horario : repo.buscarParaAgenda(desde, hasta)) {
+        for (HorarioAtencion horario : alcance.esMedico() ? alcance.horarios() : repo.buscarParaAgenda(desde, hasta)) {
+            if (!"ACTIVO".equals(horario.getEstado()) || horario.getVigenteDesde() == null || horario.getVigenteDesde().isAfter(hasta)
+                    || (horario.getVigenteHasta() != null && horario.getVigenteHasta().isBefore(desde))) continue;
             if (medicoId != null && !medicoId.equals(idMedico(horario.getMedico()))) continue;
             if (consultorioId != null && !consultorioId.equals(idConsultorio(horario.getConsultorio()))) continue;
             LocalDate inicio = desde.isAfter(horario.getVigenteDesde()) ? desde : horario.getVigenteDesde();
@@ -358,7 +378,7 @@ public class HorarioAtencionService {
     private BloqueAgenda bloque(HorarioAtencion h, LocalDate fecha, LocalDateTime inicio, LocalDateTime fin, String tipo, String motivo) {
         Medico m = h.getMedico();
         Consultorio c = h.getConsultorio();
-        return new BloqueAgenda(h.getIdHorario(), new MedicoAgenda(m.getIdMedico(), m.getNombres(), m.getApellidoPaterno(), m.getApellidoMaterno(), m.getCodigoMedico()),
+        return new BloqueAgenda(h.getIdHorario(), new MedicoAgenda(m.getIdMedico(), m.getNombres(), m.getApellidoPaterno(), m.getApellidoMaterno(), m.getCodigoMedico(), m.getNombreCompleto()),
                 c == null ? null : new ConsultorioAgenda(c.getId(), c.getCodigo(), c.getNombre()), fecha, inicio.toLocalTime(), fin.toLocalTime(), h.getDuracionCita(), tipo, motivo,
                 h.getEspecialidad() == null ? null : new EspecialidadAgenda(h.getEspecialidad().getIdEspecialidad(), h.getEspecialidad().getNombre()));
     }

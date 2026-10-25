@@ -1,0 +1,35 @@
+/api/medicos: HTTP 200, 4 registros; IDs coinciden con MariaDB.
+/api/especialidades: HTTP 200, 3 registros; IDs coinciden con MariaDB.
+/api/horarios: HTTP 200, 3 registros; IDs coinciden con MariaDB.
+/api/consultorios: HTTP 200, 3 registros; IDs coinciden con MariaDB.
+/api/horarios/ausencias: HTTP 200, 0 registros; IDs coinciden con MariaDB.
+/api/auditoria: HTTP 200, 26 registros; IDs coinciden con MariaDB.
+/api/roles: HTTP 200, 3 registros; IDs coinciden con MariaDB.
+/api/usuarios: HTTP 200, 8 registros; IDs coinciden con MariaDB.
+/api/medico/especialidades: HTTP 200, 1 registros; IDs coinciden con MariaDB.
+/: HTTP 200.
+/medicos: HTTP 200.
+/especialidades: HTTP 200.
+/horarios: HTTP 200.
+/horarios/agenda: HTTP 200.
+/horarios/ausencias: HTTP 200.
+/consultorios: HTTP 200.
+/auditoria: HTTP 200.
+/roles: HTTP 200.
+/usuarios: HTTP 200.
+Agenda de hoy: 0 bloques, solo IDs de la base real.
+Médicos: 4 filas cargadas desde MariaDB.
+Especialidades: 3 filas cargadas desde MariaDB.
+Horarios y agenda: 3 filas cargadas desde MariaDB.
+Consultorios: 3 filas cargadas desde MariaDB.
+Auditoría: 26 filas cargadas desde MariaDB.
+Roles: 3 filas cargadas desde MariaDB.
+Usuarios: 8 filas cargadas desde MariaDB.
+Ausencias: lista vacía, coincide con MariaDB.
+Inicio y agenda semanal cargados sin errores.
+Verificación por lectura: medico_especialidad, MariaDB 10.4.32, 127.0.0.1:3306.
+Las siete cuentas existentes conservan todos sus campos, contraseñas y estados.
+Las siete tablas clínicas/relaciones y roles verificadas por checksum permanecen sin cambios.
+Única escritura autorizada: nueva cuenta panel y su registro de auditoría.
+No se aplicaron migraciones ni se crearon bases de datos.
+{"PidReal":68968,"PerfilLocal":true,"BaseCorrecta":true,"HibernateValidate":true,"DemoDetenida":true}
